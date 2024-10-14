@@ -1,9 +1,10 @@
 #!/usr/bin/bash
 
-LLAMA_PATH="$1"
-PRETRAINED_PATH="$2" # path to pre-trained checkpoint
-CONFIG="$3"
-OUTPUT_DIR="$4"
+LLAMA_PATH=ckpts/Llama
+# path to pre-trained checkpoint
+PRETRAINED_PATH=ckpts/1bcbffc43484332672092e0024a8699a6eb5f558161aebf98a7c6b1db67224d1_LORA-BIAS-7B.pth
+CONFIG=finetune_data_config.yaml
+OUTPUT_DIR=ft_output/
 
 mkdir -p $OUTPUT_DIR
 
