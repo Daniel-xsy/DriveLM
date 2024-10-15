@@ -66,7 +66,7 @@ def NPImageEncode(npimage: np.ndarray) -> str:
 
 # ----------------------------------------------------------------------
 class VLMAgent:
-    def __init__(self, api_key: str, max_tokens: int = 4000) -> None:
+    def __init__(self, api_key: str, max_tokens: int = 10000) -> None:
         # self.api_key = os.environ.get('OPENAI_API_KEY')
         self.api_key = api_key
         self.max_tokens = max_tokens
@@ -116,7 +116,7 @@ class VLMAgent:
             "max_tokens": self.max_tokens,
         }
         response = requests.post(
-            "https://api.openai.com/v1/chat/completions",
+            "https://api.claudeshop.top/v1/chat/completions",
             headers=headers,
             json=payload
         )

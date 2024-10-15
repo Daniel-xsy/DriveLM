@@ -2,110 +2,70 @@ import json
 import os
 import random
 import time
+import argparse
+import numpy as np
 
 import cv2
 from rich import print
 
 from utils.request import VLMAgent, NPImageEncode
+from utils.utils import convert_text_to_json
 from imagecorruptions import corrupt
 
 
-def sample_images_uniformly(image_files, truncate_ratio, sample_number, include_last=False):
-    """
-    Uniformly samples a subset of images from a specified range of a list, considering temporal distribution.
+def main(args):
 
-    Parameters:
-    - image_files (list): A list of image file names.
-    - truncate_ratio (float): The upper limit of the range to sample from as a ratio (0 to 1).
-    - sample_number (int): The number of images to sample.
+    corruption = os.path.basename(args.root).lower()
+    print("The current corruption is: ", corruption)
 
-    Returns:
-    - list: A list of sampled image file names.
-    """
-    # Calculate the index to truncate the list of images
-    truncate_index = int(len(image_files) * truncate_ratio)
+    with open(args.sys_prompt, 'r') as f:
+        SYSTEM_PROMPT = f.read()
 
-    # Truncate the image list to the specified range
-    truncated_images = image_files[:truncate_index]
+    json_path = args.json_path
 
-    # Calculate the step to evenly distribute the samples
-    step = len(truncated_images) // sample_number
-
-    # Ensure that we are able to sample the specified number of images
-    if sample_number > len(truncated_images):
-        print("Warning: Requested sample number is greater than the available images in the specified range.")
-        sample_number = len(truncated_images)
-        sampled_images = truncated_images
-    else:
-        # Sample images uniformly from the truncated list
-        sampled_images = [truncated_images[i * step] for i in range(sample_number)]
-
-    if include_last:
-        sampled_images.append(image_files[-1])
-
-    return sampled_images
-
-
-SYSTEM_PROMPT = """You are an autonomous vehicle agent. You are provided with ground truth information about the scene and the key objects in the scene. You are also given a series of perception, prediction, planning, and behavior questions related to the scene. The input images are corrupted with various types of noise and distortions. Your task is to create new, diverse, corruption-related question-answer pairs (QA pairs) based on the given information and the corrupted images. Please generate the QA pairs following the format below:
-```json
-"perception": [
-                {"Q": "questions here",
-                 "A": "answers here"},
-                ...],
-"prediction": [
-                {"Q": "questions here",
-                 "A": "answers here"},
-                ...],
-"planning": [
-                {"Q": "questions here",
-                 "A": "answers here"},
-                ...],
-"behavior": [
-                {"Q": "Predict the behavior of the ego vehicle.", # Please fix the question for behavior
-                 "A": "answers here"}]
-```
-Please generate 3 questions for each category (perception, prediction, planning) and 1 questions for behavior based on the given information and the corrupted images.
-
-Here are more instructions:
-- Focus on the meaningful spatial information and describe the object with a single word or phrase.
-- Even if you're not sure of the answer, directly answer it.
-- Do not change the visual content described in the original response.
-
-Now, begin:
-"""
-
-if __name__ == '__main__':
-
-    json_path = '/mnt/workspace/models/DriveLM/data/QA_dataset_nus/v1_1_train_nus.json'
-
+    # load original json file
     with open(json_path, 'r') as f:
         data = json.load(f)
-    
+
+    save_dict = dict()
     for scene_token, data_item in data.items():
-        scene_desc = data_item['scene_description']
         key_frames = data_item['key_frames']
 
+        save_dict[scene_token] = dict()
         for sample_token, data_ in key_frames.items():
-            key_object = data_['key_object_infos']
+
+            save_dict[scene_token][sample_token] = dict()
+
             perception_qas = data_['QA']['perception']
             prediction_qas = data_['QA']['prediction']
             planning_qas = data_['QA']['planning']
             behavior_qas = data_['QA']['behavior']
             image_paths = data_.pop('image_paths')
 
+            save_dict[scene_token][sample_token]['image_paths'] = image_paths
+            save_dict[scene_token][sample_token]['robust_qas'] = []
+
             # init GPT-4V-based driver agent
-            gpt4v = VLMAgent(api_key='')
+            gpt4v = VLMAgent(api_key=args.api_key)
 
             # close loop simulation
             total_start_time = time.time()
             success = False
             while not success:
                 gpt4v.addTextPrompt(SYSTEM_PROMPT)
+                gpt4v.addTextPrompt(f"The current corruption is: {corruption}\n")
                 for cam, img_path in image_paths.items():
-                    img = cv2.imread(img_path.replace('../nuscenes', '/mnt/workspace/models/DriveLM/data/nuscenes'))
+                    # TODO: modify the hardcode here
+                    img_path_ = img_path.replace('../nuscenes/samples', args.root)
+                    img = cv2.imread(img_path_)
                     if img is None:
-                        raise ValueError(f"Image not found: {image_path_corruption}")
-                    corrupt_img = corrupt(corruption_name='snow', severity=3, image=img)
+                        raise ValueError(f"Image not found: {img_path_}")
+                    # corrupt_img = corrupt(corruption_name='snow', severity=3, image=img)
+                    # if args.vis:
+                    #     img_save_path = img_path_.replace('/mnt/workspace/models/DriveLM/data/nuscenes', '/mnt/workspace/models/DriveLM/data/exs')
+                    #     if not os.path.exists(os.path.dirname(img_save_path)):
+                    #         os.makedirs(os.path.dirname(img_save_path))
+                    #     cv2.imwrite(img_save_path, corrupt_img)
                     gpt4v.addImageBase64(NPImageEncode(img))
                 gpt4v.addTextPrompt(str(data_))
                 # get the decision made by the driver agent
@@ -115,12 +75,29 @@ if __name__ == '__main__':
                     total_tokens, timecost
                 ) = gpt4v.convert_image_to_language()
 
-                if ans is None:
-                    continue
+                if ans is not None:
+                    ans_json = ans.split('\n')
+                    ans_json = [data_ for data_ in ans_json if not data_.startswith('```')]
+                    for ans_json_ in ans_json:
+                        ans_json_ = convert_text_to_json(ans_json_)
+                        if ans_json_ is not None:
+                            save_dict[scene_token][sample_token]['robust_qas'].append(ans_json_)
+                    if len(ans_json) != 0:
+                        success = True
 
-            if not success:
-                continue
-            ans['img_name'] = os.path.join(instance_folder, img_path)
+            with open(args.save_path, 'w') as f:
+                json.dump(save_dict, f)
 
-            with open(save_path, 'w') as f:
-                json.dump(ans, f)
+
+if __name__ == '__main__':
+
+    argparser = argparse.ArgumentParser(description='Generate QA pairs for corrupted images')
+    argparser.add_argument('api_key', type=str, help='API key for OpenAI')
+    argparser.add_argument('--root', type=str, help='Path to the corruption set')
+    argparser.add_argument('--json_path', type=str, help='Path to the folder containing the raw json file')
+    argparser.add_argument('--save_path', type=str, help='Path to the folder to save the generated corruption QAs.')
+    argparser.add_argument('--sys-prompt', type=str, help='Path to the default system prompts.')
+    argparser.add_argument('--vis', action='store_true', help='Visualize the corrupted images.')
+    args = argparser.parse_args()
+
+    main(args)
