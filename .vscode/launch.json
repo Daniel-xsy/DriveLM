@@ -60,9 +60,10 @@
             "console": "integratedTerminal",
             "cwd": "/mnt/workspace/models/DriveLM/corruptions",
             "args": [
-                "/mnt/workspace/models/DriveLM/data/QA_dataset_nus/v1_1_train_nus.json",
-                "sk-50uqadYRwj1LaB4t58AgpIPc4kNBT6I11xWys8bUcpG5gdJG",
-                "/mnt/workspace/models/DriveLM/data/QA_dataset_nus/v1_1_train_nus_corrupt.json",
+                "",
+                "--root", "../data/val_data_corruption/Fog",
+                "--json_path", "../data/QA_dataset_nus/drivelm_val.json",
+                "--save_path", "../data/QA_dataset_nus/drivelm_val_corrupt.json",
                 "--sys-prompt", "prompts/1013.txt",
                 "--vis"
             ],
