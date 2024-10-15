@@ -66,7 +66,7 @@ def NPImageEncode(npimage: np.ndarray) -> str:
 
 # ----------------------------------------------------------------------
 class VLMAgent:
-    def __init__(self, api_key: str, max_tokens: int = 4000) -> None:
+    def __init__(self, api_key: str, max_tokens: int = 10000) -> None:
         # self.api_key = os.environ.get('OPENAI_API_KEY')
         self.api_key = api_key
         self.max_tokens = max_tokens
