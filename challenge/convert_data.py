@@ -70,6 +70,6 @@ def loop_test(root, dst):
 
 
 if __name__ == '__main__':
-    root = "test.json"
+    root = "challenge/test.json"
     dst = "test_eval.json"
     loop_test(root, dst)
