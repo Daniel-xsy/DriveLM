@@ -11,8 +11,8 @@ def convert_text_to_json(input_text, required_keys=["Q", "A"]):
             return json_data
         else:
             # If not all required keys are present, return None
-            return None
+            raise
     except json.JSONDecodeError:
         # If the text is not valid JSON, return None
-        print('Fail to convert text to json.')
+        print('Fail to convert text to json', input_text)
         return None

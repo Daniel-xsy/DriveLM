@@ -1,0 +1,29 @@
+corruption_sets:
+  - corruption: Fog
+    root: ../data/val_data_corruption/Fog
+    save_path: ../data/corrupt_qa/drivelm_val_corrupt_fog.json
+    sys_prompt: ./prompts/1016.txt
+  - corruption: Snow
+    root: ../data/val_data_corruption/Snow
+    save_path: ../data/corrupt_qa/drivelm_val_corrupt_snow.json
+    sys_prompt: ./prompts/1016.txt
+  - corruption: Rain
+    root: ../data/val_data_corruption/Rain
+    save_path: ../data/corrupt_qa/drivelm_val_corrupt_rain.json
+    sys_prompt: ./prompts/1016.txt
+  - corruption: LowLight
+    root: ../data/val_data_corruption/LowLight
+    save_path: ../data/corrupt_qa/drivelm_val_corrupt_lowlight.json
+    sys_prompt: ./prompts/1016.txt
+  - corruption: Brightness
+    root: ../data/val_data_corruption/Brightness
+    save_path: ../data/corrupt_qa/drivelm_val_corrupt_brightness.json
+    sys_prompt: ./prompts/1016.txt
+  - corruption: MotionBlur
+    root: ../data/val_data_corruption/MotionBlur
+    save_path: ../data/corrupt_qa/drivelm_val_corrupt_motionblur.json
+    sys_prompt: ./prompts/1016.txt
+  - corruption: Saturate
+    root: ../data/val_data_corruption/Saturate
+    save_path: ../data/corrupt_qa/drivelm_val_corrupt_saturated.json
+    sys_prompt: ./prompts/1016.txt

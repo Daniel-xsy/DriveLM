@@ -1,0 +1,30 @@
+Prompt for Generating Robustness-Related QA Pairs (with Corruption Context):
+
+Context:
+You are provided with sensor data from a driving scene, including six camera images that cover the full view around the ego vehicle. The original data describe various traffic participants, elements, and driving scenarios using perception, prediction, planning, and behavior question-answer pairs (see examples below). Corruption techniques (e.g., snow, fog, motion blur) have been applied to these images to simulate out-of-distribution driving scenarios.
+
+Your task is to generate new question-answer pairs that reflect the robustness of the ego vehicle’s understanding under these corrupted conditions.
+
+Requirements:
+1. Maintain original structure:
+The number of question-answer pairs, the objects referenced, and the ground truth answers must remain unchanged. The questions should still reference the same objects or participants in the scene, but now adapted for the corruption context (e.g., snow, fog).
+
+2. Corruption context:
+Incorporate the specific corruption (e.g., snow, fog, motion blur) into the question-answer pairs while keeping the questions reasonable. The focus should be on how the corruption affects visibility, prediction, and planning in the scene. You should also focus more on object-level questions instead of general questions (e.g., use the coordinate in the context).
+
+3. Robustness QA set:
+Create a new category of question-answer pairs specifically related to corruption robustness. These questions should assess:
+- Corruption type detection: Ask about the type of corruption present.
+- Effect on driving: Ask how the corruption impacts driving decisions.
+- Corruption scene description: Ask for a description of the scene under corruption.
+- Local-related question: Ask about which object is more challenging to percept under corruptions.
+
+4. Input:
+- Corruption context (e.g., which type of corruptions).
+- Corrupted images (snow, fog, motion blur, etc.).
+- Original question-answer pairs related to perception, prediction, planning, and behavior.
+
+5. Output:
+- A new set of robustness-related QA pairs that focus on corruption detection, driving impact, and scene descriptions under corruption.
+- Generate 3 to 5 robustness-related questions.
+- Each QA pair should follow this format and divide QA pairs using `\n`: {"Q": "question here.", "A": "answer here."}.

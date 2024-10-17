@@ -11,6 +11,7 @@ import cv2
 import subprocess
 from mmcv.utils import Registry
 from imagecorruptions import corrupt
+from skimage.color import hsv2rgb,rgb2hsv
 
 
 CORRUPTIONS= Registry('corruptions')
