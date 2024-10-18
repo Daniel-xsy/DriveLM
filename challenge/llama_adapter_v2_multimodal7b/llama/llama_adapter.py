@@ -250,6 +250,9 @@ class LLaMA_adapter(nn.Module):
                 logits = self.forward_inference(visual_query, tokens[:, prev_pos:cur_pos], prev_pos)
             if temperature > 0:
                 probs = torch.softmax(logits / temperature, dim=-1)
+                # workaround: prevent 0 prob token
+                if torch.isnan(probs).any():
+                    probs[probs.is_nan()] = 0
                 next_token = sample_top_p(probs, top_p)
             else:
                 next_token = torch.argmax(logits, dim=-1)
