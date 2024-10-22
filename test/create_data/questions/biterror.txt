@@ -1,0 +1,2 @@
+Q: What is the current type of corruption? <choices: Fog, Snow, Rain, Bright, Dark, Saturate, Sensor failure, Motion blur, Zoom blur, H256 ABR compression, Bit error, Color quant, JPEG compression>
+A: Bit error.
