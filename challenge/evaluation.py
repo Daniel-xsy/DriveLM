@@ -5,16 +5,17 @@ import numpy as np
 import torch.nn as nn
 import language_evaluation
 from multiprocessing import Pool
+from tqdm import tqdm
 
 import sys
 sys.path.append(".")
-from gpt_eval import GPTEvaluation
+from gpt_eval_request import GPTEvaluation
 
 
 class evaluation_suit():
-    def __init__(self):
+    def __init__(self, api_key):
         self.language_eval = language_evaluation.CocoEvaluator(coco_types=["BLEU", "ROUGE_L", "CIDEr"])
-        self.chatgpt_eval = GPTEvaluation()
+        self.chatgpt_eval = GPTEvaluation(api_key)
         self.GPT = []
         self.accuracy = {"answer": [], "GT": []}
         self.language = {"answer": [], "GT": []}
@@ -151,6 +152,7 @@ class evaluation_suit():
 if __name__ == '__main__':
     # get args
     parser = argparse.ArgumentParser(description='Evaluation')
+    parser.add_argument('--api_key', type=str, help='OpenAI API key for evaluation on your local machine')
     parser.add_argument('--root_path1', type=str, default="./llama-adapter-DriveLM.json", help='path to prediction file')
     parser.add_argument('--root_path2', type=str, default="./test_v1.json", help='path to test file')
     args = parser.parse_args()
@@ -162,8 +164,8 @@ if __name__ == '__main__':
     with open(args.root_path2, 'r') as f:
         test_file = json.load(f)
 
-    evaluation = evaluation_suit()
-    for scene_id in test_file.keys():
+    evaluation = evaluation_suit(api_key=args.api_key)
+    for scene_id in tqdm(test_file.keys()):
         scene_data = test_file[scene_id]['key_frames']
 
         for frame_id in scene_data.keys():
