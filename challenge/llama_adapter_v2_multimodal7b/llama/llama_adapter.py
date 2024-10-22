@@ -248,12 +248,26 @@ class LLaMA_adapter(nn.Module):
         for cur_pos in range(start_pos, total_len):
             with torch.cuda.amp.autocast():
                 logits = self.forward_inference(visual_query, tokens[:, prev_pos:cur_pos], prev_pos)
+                logits[torch.isnan(logits)] = 0
+                logits = logits.clamp(min=-30, max=30)
             if temperature > 0:
                 probs = torch.softmax(logits / temperature, dim=-1)
                 # workaround: prevent 0 prob token
-                if torch.isnan(probs).any():
-                    probs[probs.is_nan()] = 0
-                next_token = sample_top_p(probs, top_p)
+                # if torch.isnan(probs).any() or torch.isinf(probs).any() or probs.le(0).any():
+                #     probs[torch.isnan(probs)] = 0
+                #     probs[torch.isinf(probs)] = 0
+                #     probs[probs.le(0)] = 0
+                # probs = torch.clamp(probs, 0, 1.0)
+                try:
+                    next_token = sample_top_p(probs, top_p)
+                except Exception as e:
+                    print(f'\nlogits error: max: {logits.max()}, min: {logits.min()}, isnan: {torch.isnan(logits).any()}, isinf: {torch.isinf(logits).any()}')
+                    logits = logits[torch.isnan(logits)] = 0
+                    print(f'\nafter clamp nan: max: {logits.max()}, min: {logits.min()}, isnan: {torch.isnan(logits).any()}, isinf: {torch.isinf(logits).any()}')
+                    logits = logits.clamp(min=-30, max=30)
+                    print(f'\nafter [-30, 30]: max: {logits.max()}, min: {logits.min()}, isnan: {torch.isnan(logits).any()}, isinf: {torch.isinf(logits).any()}')
+                    exit()
+
             else:
                 next_token = torch.argmax(logits, dim=-1)
             next_token = next_token.reshape(-1)
