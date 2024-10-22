@@ -71,7 +71,7 @@ class VLMAgent:
                  model: str = 'gpt-4o', 
                  temp: float = 0.2,
                  top_p: float = 0.1,
-                 max_tokens: int = 10000) -> None:
+                 max_tokens: int = 4096) -> None:
         # self.api_key = os.environ.get('OPENAI_API_KEY')
         self.api_key = api_key
         self.model = model

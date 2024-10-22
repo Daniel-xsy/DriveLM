@@ -7,12 +7,13 @@ import argparse
 from tqdm import tqdm
 from multiprocessing import Pool
 import glob
-import time  # Import time for sleep
+import time
+from datetime import datetime
 
 from utils.request import NPImageEncode, VLMAgent
 
 def process_chunk(args):
-    chunk_file, output_file, api_key, system_prompt_file = args
+    chunk_file, output_file, model, api_key, system_prompt_file, corruption = args
     results = []
 
     # Check if output_file exists and load existing results
@@ -44,12 +45,14 @@ def process_chunk(args):
         while ans is None:
             try:
                 # Initialize GPT4V instance
-                gpt4v = VLMAgent(api_key=api_key, max_tokens=10000)
+                gpt4v = VLMAgent(api_key=api_key, model=model, max_tokens=4096)
                 # Add system prompt
                 gpt4v.addTextPrompt(system_prompt)
 
                 # Add images
                 for img_path in entry['images']:
+                    if len(corruption) > 1 and corruption != 'NoImage':
+                        img_path = img_path.replace('nuscenes/samples', f'val_data_corruption/{corruption}')
                     img = cv2.imread(img_path)
                     if img is None:
                         print(f"Error loading image: {img_path}")
@@ -85,7 +88,7 @@ def process_chunk(args):
 
 def main(args):
     # Create hidden temporary folder
-    temp_dir = '.temp'
+    temp_dir = f'.temp_{args.model}'
     if not os.path.exists(temp_dir):
         os.makedirs(temp_dir)
 
@@ -115,7 +118,7 @@ def main(args):
     # Prepare arguments for processing chunks
     pool_args = []
     for chunk_file, output_file in zip(chunk_files, output_files):
-        pool_args.append((chunk_file, output_file, args.key, args.system_prompt))
+        pool_args.append((chunk_file, output_file, args.model, args.key, args.system_prompt, args.corruption))
 
     # Use multiprocessing Pool to process chunks
     with Pool(processes=num_processes) as pool:
@@ -131,6 +134,7 @@ def main(args):
                     results.extend(chunk_results)
                 except json.JSONDecodeError:
                     print(f"Error reading {output_file}")
+                    exit(1)
         else:
             print(f"Output file {output_file} does not exist.")
 
@@ -147,10 +151,12 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Inference script for GPT with multiprocessing')
     parser.add_argument('--key', type=str, required=True, help='OpenAI API key')
+    parser.add_argument('--model', type=str, required=True, help='GPT version')
     parser.add_argument('--input', type=str, required=True, help='Input JSON file')
     parser.add_argument('--output', type=str, required=True, help='Output JSON file')
     parser.add_argument('--system_prompt', type=str, required=True, help='System prompt file')
     parser.add_argument('--num_processes', type=int, default=4, help='Number of processes to use')
+    parser.add_argument('--corruption', type=str, default='', help='Corruption type')
     parser.add_argument('--clean_temp', action='store_true', help='Delete temporary files after processing')
     args = parser.parse_args()
     main(args)
