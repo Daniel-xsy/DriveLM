@@ -1,6 +1,11 @@
+# Evaluate all the tasks separately
+# Calibrate the metric
+#   - Acc: more robust implmentation
+
 import re
 import argparse
 import json
+import random
 import numpy as np
 import torch.nn as nn
 import language_evaluation
@@ -9,6 +14,7 @@ from multiprocessing import Pool
 import sys
 sys.path.append(".")
 from gpt_eval_request import GPTEvaluation
+from utils import preprocess_answer
 
 
 class evaluation_suit():
@@ -25,16 +31,20 @@ class evaluation_suit():
         for i in range(len(self.accuracy["answer"])):
             answer = self.accuracy["answer"][i]
             GT = self.accuracy["GT"][i]
+            answer = preprocess_answer(answer)
+            GT = preprocess_answer(GT)
             if answer == GT:
                 scores.append(1.0)
             else:
                 scores.append(0.0)
 
         if len(scores) > 0:
-            scores = sum(scores) / len(scores)
+            score = sum(scores) / len(scores)
+            print(f'Accuracy_score: {sum(scores)} / {len(scores)} = {score}')
         else:
-            scores = -1
-        return scores
+            print("No data for accuracy evaluation")
+            score = -1
+        return score
 
     def eval_chatGPT(self, data):
         with Pool(32) as p:  # Change the number based on your CPU cores
@@ -42,10 +52,12 @@ class evaluation_suit():
 
         scores = list(map(float, scores))
         if len(scores) > 0:
-            scores = sum(scores) / len(scores)
+            score = sum(scores) / len(scores)
+            print(f'ChatGPT_score: {sum(scores)} / {len(scores)} = {score}')
         else:
-            scores = -1
-        return scores
+            print("No data for ChatGPT evaluation")
+            score = -1
+        return score
 
     def eval_language(self):
         """
@@ -72,6 +84,7 @@ class evaluation_suit():
         if len(outs1) > 0 and len(self.match["GPT"]) > 0:
             outs1 = sum(outs1) / len(outs1)
             outs2 = self.eval_chatGPT(self.match["GPT"])
+            print(f'Match_score: F1_score: {outs1} ChatGPT_score: {outs2}')
             scores = (outs1 + outs2) / 2.0
         else:
             scores = -1
@@ -138,28 +151,15 @@ class evaluation_suit():
         if 0 in tag:
             self.accuracy["answer"].append(answer)
             self.accuracy["GT"].append(GT)
-        if 1 in tag:
+        else:
             self.GPT.append((answer, GT))
-        if 2 in tag:
-            self.language["GT"].append(GT)
-            self.language["answer"].append(answer)
-        if 3 in tag:
-            self.match["match"]["GT"].append(GT)
-            self.match["match"]["answer"].append(answer)
-            self.match["GPT"].append((answer, GT))
-
             
     def evaluation(self):
         print("evaluation start!")
         scores = {}
         scores["accuracy"] = self.eval_acc()
         # scores["chatgpt"] = self.eval_chatGPT(self.GPT)
-        scores["chatgpt"] = -1
-        scores["language"] = self.eval_language()
-        # scores["match"] = self.eval_match()
-        scores["match"] = -1
 
-        return scores
 
 if __name__ == '__main__':
     # get args
@@ -189,56 +189,24 @@ if __name__ == '__main__':
             frame_data_qa = scene_data[frame_id]['QA']
             first_flag = True
 
-            for i, qa in enumerate(frame_data_qa[args.task]):
+            for i, qa in enumerate(frame_data_qa["perception"] + frame_data_qa["prediction"] + frame_data_qa["planning"] + frame_data_qa["behavior"]):
+                # evaluate each task separately
                 question = qa['Q']
+                # TODO: might still have bugs here
+                task_question_list = [qa_pairs['Q'] for qa_pairs in frame_data_qa[args.task]]
+                if question not in task_question_list:
+                    continue
                 GT = qa['A']
                 tag = qa['tag']
+                
                 idx = scene_id + "_" + frame_id + "_" + str(i)
                 predict = pred_file[idx]["answer"]
-                # assert pred_file[idx]["gt_answer"] == GT, print(pred_file[idx]["gt_answer"], GT)
                 if first_flag:
                     first_flag = False
-                    evaluation.set_graph(predict, GT)
+                    # evaluation.set_graph(predict, GT)
                     evaluation.forward(tag, predict, GT)
                 else:
-                    if evaluation.eval_graph(question):
-                        res = evaluation.forward(tag, predict, GT)
-
+                    # if evaluation.eval_graph(question):
+                    res = evaluation.forward(tag, predict, GT)
+                    
     output = evaluation.evaluation()
-    print("accuracy score: ", output["accuracy"])
-    print("chatgpt score: ", output["chatgpt"])
-    print("match score: ", output["match"])
-    print("language score: ", output["language"])
-    
-    # Normalize to 0-1 and combine the scores: chatgpt, language, match, accuracy
-    scores = []
-    weights = [0.4, 0.2, 0.2, 0.2]
-    
-    # chatGPT
-    score = output["chatgpt"] / 100.
-    scores.append(score)
-
-    # language
-    score = 0
-    for idx, key in enumerate(output["language"].keys()):
-        if idx < 4:
-            score += output["language"][key] / 4. / 3.
-        elif idx == 4:
-            score += output["language"][key] / 3. 
-        else:
-            score += output["language"][key] / 10. / 3.
-
-    scores.append(score)
-    
-    # match
-    score = output["match"] / 100.
-    scores.append(score)
-
-    # accuracy
-    score = output["accuracy"]
-    scores.append(score)
-
-    final_score = sum([x * y for x, y in zip(scores, weights)])
-    print("final score: ", final_score)
-    
-
