@@ -4,6 +4,8 @@ import os
 import re
 from tqdm import tqdm
 
+from utils import preprocess_answer
+
 class EvaluationSuit:
     def __init__(self):
         # Mappings for ground truth
@@ -27,8 +29,10 @@ class EvaluationSuit:
         # Disagreement lists for each question type
         self.disagreements_pred1_correct_pred2_wrong_abcd = []
         self.disagreements_pred2_correct_pred1_wrong_abcd = []
+        self.both_wrong_abcd = []
         self.disagreements_pred1_correct_pred2_wrong_yesno = []
         self.disagreements_pred2_correct_pred1_wrong_yesno = []
+        self.both_wrong_yesno = []
 
     def determine_question_type(self, question):
         """
@@ -53,13 +57,14 @@ class EvaluationSuit:
             key_frames = scene_content.get('key_frames', {})
             for frame_id, frame_content in key_frames.items():
                 qa_lists = frame_content.get('QA', {})
+                offset = 0
                 for qa_type in ['perception', 'prediction', 'planning', 'behavior']:
                     qa_list = qa_lists.get(qa_type, [])
                     for idx, qa in enumerate(qa_list, start=1):
                         tags = qa.get('tag', [])
                         if 0 not in tags:
                             continue  # Skip QAs that are not tag=0
-                        qa_id = f"{scene_id}_{frame_id}_{idx}"
+                        qa_id = f"{scene_id}_{frame_id}_{idx+offset-1}"
                         gt_answer = qa.get('A', '').strip()
                         question = qa.get('Q', '').strip()
                         question_type = self.determine_question_type(question)
@@ -79,6 +84,7 @@ class EvaluationSuit:
                                 "qa_type": qa_type,
                                 "full_qa": qa
                             }
+                    offset += len(qa_list)
 
     def load_predictions(self, pred_file):
         """
@@ -94,7 +100,7 @@ class EvaluationSuit:
         return pred_mapping
 
     def evaluate_confusion_matrix(self, gt_mapping, pred1_mapping, pred2_mapping, confusion_matrix, 
-                                  disagreements_pred1_correct_pred2_wrong, disagreements_pred2_correct_pred1_wrong):
+                                  disagreements_pred1_correct_pred2_wrong, disagreements_pred2_correct_pred1_wrong, both_wrong):
         """
         Compares predictions against GT and updates the confusion matrix and disagreements.
         """
@@ -105,8 +111,14 @@ class EvaluationSuit:
             qa_type = gt_info.get('qa_type', '')
             full_qa = gt_info.get('full_qa', {})
 
+            if not qa_type == 'perception':
+                continue
+
             pred1_answer = pred1_mapping.get(qa_id, '')
             pred2_answer = pred2_mapping.get(qa_id, '')
+            pred1_answer = preprocess_answer(pred1_answer)
+            pred2_answer = preprocess_answer(pred2_answer)
+            gt_answer = preprocess_answer(gt_answer)
 
             pred1_correct = (pred1_answer == gt_answer)
             pred2_correct = (pred2_answer == gt_answer)
@@ -140,6 +152,15 @@ class EvaluationSuit:
                 })
             else:
                 confusion_matrix["both_wrong"] += 1
+                both_wrong.append({
+                    "id": qa_id,
+                    "question": question,
+                    "gt_answer": gt_answer,
+                    "pred1_answer": pred1_answer,
+                    "pred2_answer": pred2_answer,
+                    "qa_type": qa_type,
+                    "full_qa": full_qa
+                })
 
     def evaluate(self, pred1_mapping, pred2_mapping):
         """
@@ -152,7 +173,8 @@ class EvaluationSuit:
             pred2_mapping, 
             self.confusion_matrix_abcd,
             self.disagreements_pred1_correct_pred2_wrong_abcd,
-            self.disagreements_pred2_correct_pred1_wrong_abcd
+            self.disagreements_pred2_correct_pred1_wrong_abcd,
+            self.both_wrong_abcd
         )
         
         print("Evaluating Yes/No Questions...")
@@ -162,7 +184,8 @@ class EvaluationSuit:
             pred2_mapping, 
             self.confusion_matrix_yesno,
             self.disagreements_pred1_correct_pred2_wrong_yesno,
-            self.disagreements_pred2_correct_pred1_wrong_yesno
+            self.disagreements_pred2_correct_pred1_wrong_yesno,
+            self.both_wrong_yesno
         )
 
     def save_results(self, output_dir):
@@ -193,6 +216,11 @@ class EvaluationSuit:
             json.dump(self.disagreements_pred2_correct_pred1_wrong_abcd, f, indent=4)
         print(f"Disagreements (pred2 correct, pred1 wrong) for ABCD saved to {disagree2_abcd_path}")
 
+        btoh_wrong_abcd_path = os.path.join(output_dir, "both_wrong_abcd.json")
+        with open(btoh_wrong_abcd_path, 'w') as f:
+            json.dump(self.both_wrong_abcd, f, indent=4)
+        print(f"Both Wrong for ABCD saved to {btoh_wrong_abcd_path}")
+
         # Save disagreements for Yes/No
         disagree1_yesno_path = os.path.join(output_dir, "pred1_correct_pred2_wrong_yesno.json")
         with open(disagree1_yesno_path, 'w') as f:
@@ -203,6 +231,11 @@ class EvaluationSuit:
         with open(disagree2_yesno_path, 'w') as f:
             json.dump(self.disagreements_pred2_correct_pred1_wrong_yesno, f, indent=4)
         print(f"Disagreements (pred2 correct, pred1 wrong) for Yes/No saved to {disagree2_yesno_path}")
+
+        btoh_wrong_yesno_path = os.path.join(output_dir, "both_wrong_yesno.json")
+        with open(btoh_wrong_yesno_path, 'w') as f:
+            json.dump(self.both_wrong_yesno, f, indent=4)
+        print(f"Both Wrong for Yes/No saved to {btoh_wrong_yesno_path}")
 
     def print_confusion_matrices(self):
         """
