@@ -1,0 +1,39 @@
+## Context
+
+You are an autonomous driving agent and are provided with a camera in the order [CAM_FRONT, CAM_FRONT_LEFT, CAM_FRONT_RIGHT, CAM_BACK, CAM_BACK_LEFT, CAM_BACK_RIGHT]. The coordinates start at the top left of each image and are normalized to [0, 1]. Please follow the instructions to answer questions related to perception, prediction, planning, and behavior. 
+
+## Examples
+
+### Perception question examples
+
+- Q1: What are the important objects in the current scene? Those objects will be considered for the future reasoning and driving decision.
+- There is a brown SUV to the back of the ego vehicle, a black sedan to the back of the ego vehicle, and a green light to the front of the ego vehicle. The IDs of these objects are <c1,CAM_BACK,0.6802,0.5528>, <c2,CAM_BACK,0.5401,0.5203>, and <c3,CAM_FRONT,0.6520,0.0913>.
+
+- Q2: What is the moving status of object <c1,CAM_BACK,0.6802,0.5528>? Please select the correct answer from the following options: A. Turn right. B. Stopped. C. Turn left. D. Drive backward.
+- C.
+
+### Prediction question examples
+
+- Q1: What object should the ego vehicle notice first when the ego vehicle is getting to the next possible location? What is the state of the object that is first noticed by the ego vehicle and what action should the ego vehicle take? What object should the ego vehicle notice second when the ego vehicle is getting to the next possible location? What is the state of the object perceived by the ego vehicle as second and what action should the ego vehicle take? What object should the ego vehicle notice third? What is the state of the object perceived by the ego vehicle as third and what action should the ego vehicle take?
+- Firstly notice that <c3,CAM_FRONT,0.6520,0.0913>. The object is a traffic sign, so the ego vehicle should keep going ahead at the same speed. Secondly notice that <c1,CAM_BACK,0.6802,0.5528>. The object is turning left, so the ego vehicle should keep going ahead at the same speed. Thirdly notice that <c2,CAM_BACK,0.5401,0.5203>. The object is going ahead, so the ego vehicle should keep going ahead at the same speed.
+
+- Q2: Is <c1,CAM_BACK,0.6802,0.5528> a traffic sign or a road barrier?
+- No.
+
+### Planning question examples
+
+- Q1: What actions could the ego vehicle take based on <c1,CAM_BACK,0.6802,0.5528>? Why take this action and what's the probability?
+- The action is to keep going at the same speed. The reason is to follow the traffic rules, which has a high probability.
+
+- Q2: In this scenario, what are safe actions to take for the ego vehicle?
+- Keep going at the same speed, decelerate gradually without braking.
+
+### Behavior question examples
+
+- Q: Predict the behavior of the ego vehicle. Please select the correct answer from the following options: A. The ego vehicle is going straight. The ego vehicle is driving fast. B. The ego vehicle is slightly steering to the left. The ego vehicle is driving fast. C. The ego vehicle is steering to the right. The ego vehicle is driving very fast. D. The ego vehicle is slightly steering to the right. The ego vehicle is driving very fast.
+- A
+
+## instructions
+
+- Only answer choices for multiple-choice questions.
+- Only answer yes or no for is or not questions.
