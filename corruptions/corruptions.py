@@ -2,6 +2,7 @@ from copy import deepcopy
 import functools
 import PIL
 from PIL import Image
+import random
 
 import torch
 import numpy as np
@@ -520,3 +521,136 @@ class BitError(BaseCorruption):
             dst])
 
         return return_code
+
+
+@CORRUPTIONS.register_module()
+class WaterSplashCorruption(BaseCorruption):
+    def __init__(self, severity, norm_config):
+        """
+        Create corruptions: 'Water Splash'.
+        Args: 
+            severity (int): severity of corruption, range (1, 5)
+        """
+        super().__init__(severity, norm_config, 'water_splash')
+        self.corrupt_func = self._get_corrupt_func()
+
+    def _get_corrupt_func(self):
+        return functools.partial(self.add_water_splash, severity=self.severity)
+
+    def add_water_splash(self, x, severity):
+        intensity_map = {1: 0.1, 2: 0.3, 3: 0.5, 4: 0.7, 5: 0.9}
+        splash_intensity = intensity_map.get(severity, 0.5)
+
+        x_pil = Image.fromarray(cv2.cvtColor(x, cv2.COLOR_BGR2RGB)).convert("RGBA")
+        splash_overlay = np.random.normal(128, 50, x.shape).astype(np.uint8)
+        splash_overlay = cv2.GaussianBlur(splash_overlay, (31, 31), 0)
+
+        splash_mask = np.zeros_like(x)
+        splash_mask[:, :, :] = splash_overlay[:, :, np.newaxis]
+        splash_mask = Image.fromarray(splash_mask, 'RGBA')
+
+        blended_image = Image.blend(x_pil, splash_mask, alpha=splash_intensity)
+
+        return cv2.cvtColor(np.array(blended_image), cv2.COLOR_RGBA2BGR)
+
+    def __call__(self, img):
+        """
+        Args:
+            img (torch.Tensor): [B, M, C, H, W] multi-view images
+        """
+        mean = self.norm_config['mean']
+        std = self.norm_config['std']
+        
+        img = deepcopy(img)
+        B, M, C, H, W = img.size()
+        img = img.permute(0, 1, 3, 4, 2) # [B, M, C, H, W] => [B, M, H, W, C]
+        img = img * torch.tensor(std) + torch.tensor(mean)
+        assert img.min() >= 0 and img.max() <= 255, "Image pixel out of range"
+        
+        new_img = np.zeros_like(img)
+        for b in range(B):
+            # Always corrupt the first image
+            new_img[b, 0] = self.corrupt_func(np.uint8(img[b, 0].numpy()))
+
+            # Randomly corrupt 1 to 5 other images in the view
+            num_to_corrupt = random.randint(1, 5)
+            selected_views = random.sample(range(1, M), num_to_corrupt)
+            for m in selected_views:
+                new_img[b, m] = self.corrupt_func(np.uint8(img[b, m].numpy()))
+
+        return new_img
+
+
+@CORRUPTIONS.register_module()
+class LensObstacleCorruption(BaseCorruption):
+    def __init__(self, severity, norm_config):
+        """
+        Create corruptions: 'Lens Obstacle' with Gaussian Blur effect.
+        Args: 
+            severity (int): severity of corruption, range (1, 5)
+        """
+        super().__init__(severity, norm_config, 'lens_obstacle')
+        self.corrupt_func = self._get_corrupt_func()
+
+    def _get_corrupt_func(self):
+        return functools.partial(self.add_lens_obstacle, severity=self.severity)
+
+    def add_lens_obstacle(self, x, severity):
+        # Map severity to Gaussian blur kernel size and ellipse size
+        blur_map = {1: (11, 11), 2: (21, 21), 3: (31, 31), 4: (51, 51), 5: (71, 71)}  # Kernel size for GaussianBlur
+        size_map = {1: 0.1, 2: 0.2, 3: 0.3, 4: 0.4, 5: 0.5}  # Max size of the ellipse
+        std_map = {1: 0.3, 2: 0.25, 3: 0.2, 4: 0.15, 5: 0.1}  # Gaussian standard deviation for center location
+
+        h, w, _ = x.shape
+        kernel_size = blur_map.get(severity, (31, 31))
+        max_size = size_map.get(severity, 0.3)
+        std_dev = std_map.get(severity, 0.2)  # Standard deviation for Gaussian center distribution
+
+        # Gaussian distribution for the center (mean at the center of the image)
+        center_x = int(np.clip(np.random.normal(w // 2, std_dev * w), 0, w))
+        center_y = int(np.clip(np.random.normal(h // 2, std_dev * h), 0, h))
+        center = (center_x, center_y)
+
+        # Random ellipse size
+        axes = (int(random.uniform(0.1, max_size) * w), int(random.uniform(0.1, max_size) * h))
+        angle = random.randint(0, 360)  # Random angle of the ellipse
+
+        # Create the mask with an ellipse
+        mask = np.zeros((h, w), dtype=np.uint8)
+        cv2.ellipse(mask, center, axes, angle, 0, 360, 255, -1)
+
+        # Apply Gaussian blur to the entire image
+        blurred_image = cv2.GaussianBlur(x, kernel_size, 0)
+
+        # Use the mask to blend the blurred and original image
+        result = np.where(mask[:, :, np.newaxis] == 255, blurred_image, x)
+
+        return result
+
+    def __call__(self, img):
+        """
+        Args:
+            img (torch.Tensor): [B, M, C, H, W] multi-view images
+        """
+        mean = self.norm_config['mean']
+        std = self.norm_config['std']
+        
+        img = deepcopy(img)
+        B, M, C, H, W = img.size()
+        img = img.permute(0, 1, 3, 4, 2)  # [B, M, C, H, W] => [B, M, H, W, C]
+        img = img * torch.tensor(std) + torch.tensor(mean)
+        assert img.min() >= 0 and img.max() <= 255, "Image pixel out of range"
+
+        new_img = np.zeros_like(img)
+        new_img = img.numpy()
+        for b in range(B):
+            # Always corrupt the first image
+            new_img[b, 0] = self.corrupt_func(np.uint8(img[b, 0].numpy()))
+
+            # Randomly corrupt 1 to 5 other images in the view
+            num_to_corrupt = random.randint(1, 5)
+            selected_views = random.sample(range(1, M), num_to_corrupt)
+            for m in selected_views:
+                new_img[b, m] = self.corrupt_func(np.uint8(img[b, m].numpy()))
+
+        return new_img
