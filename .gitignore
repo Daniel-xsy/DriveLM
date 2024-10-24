@@ -167,4 +167,8 @@ cython_debug/
 /challenge/llama_adapter_v2_multimodal7b/ckpts
 /challenge/llama_adapter_v2_multimodal7b/ft_output
 /challenge/llama_adapter_v2_multimodal7b/output
-.temp
+.temp*
+/challenge/evaluation_results
+/challenge/llama_adapter_v2_multimodal7b/output_*
+/test/results
+/test/data
