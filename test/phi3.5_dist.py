@@ -111,6 +111,11 @@ class LLMPredictor:
         batch_inputs = [{"prompt": prompt, "multi_modal_data": multi_modal_data} for prompt, multi_modal_data in zip(prompts, multi_modal_datas)]
 
         # Generate outputs
+        # outputs = self.llm.generate(
+        #     {"prompt": prompt, "multi_modal_data": multi_modal_data},
+        #     self.sampling_params
+        # )
+
         outputs = self.llm.generate(
             batch_inputs,
             self.sampling_params,

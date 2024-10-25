@@ -27,8 +27,6 @@ def convert_to_gpt_format(input_file, output_file):
                         "id": f"{scene_id}_{frame_id}_{category}_{idx}",
                         "images": image_paths,
                         "question": question,
-                        # Optionally include the expected answer if available
-                        # "answer": answer
                     }
                     output.append(output_entry)
 
@@ -36,6 +34,6 @@ def convert_to_gpt_format(input_file, output_file):
         json.dump(output, f, indent=4)
 
 if __name__ == '__main__':
-    input_file = '/mnt/workspace/models/DriveLM/data/QA_dataset_nus/v1_1_val_nus_q_only.json'  # Update with your actual input file path
-    output_file = '/mnt/workspace/models/DriveLM/data/test/test_gpt.json'
+    input_file = '/mnt/workspace/models/DriveLM/data/QA_dataset_nus/drivelm_val_norm.json'  # Update with your actual input file path
+    output_file = '/mnt/workspace/models/DriveLM/data/test/test_gpt_norm.json'
     convert_to_gpt_format(input_file, output_file)

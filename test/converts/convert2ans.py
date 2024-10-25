@@ -144,4 +144,5 @@ if __name__ == "__main__":
     # Example usage:
     # Replace 'input.json' with your input file path
     # Replace 'output.json' with your desired output file path
-    main('/cpfs01/user/konglingdong/models/DriveLM/test/results/gpt4o_output.json', '/cpfs01/user/konglingdong/models/DriveLM/test/results/gpt4o_output_convert.json')
+    main('/mnt/workspace/models/DriveLM/test/results/phi3.5/phi3.5_output.json', 
+        '/mnt/workspace/models/DriveLM/test/results/phi3.5/phi3.5_output_convert.json')

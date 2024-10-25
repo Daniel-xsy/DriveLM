@@ -136,7 +136,7 @@ if __name__ == "__main__":
     # extract the data from the training json file
     # root_path = "data/train_sample.json"
     # root_path = "data/v1_1_train_nus.json"
-    root_path = 'data/QA_dataset_nus/v1_1_train_nus.json'
+    root_path = 'data/QA_dataset_nus/drivelm_val.json'
     save_path = "test.json"
     extract_data(root_path, save_path)
 
