@@ -1,15 +1,24 @@
-# This script convert the answer of GPT towards the format for evaluation
-
 import json
 import re
+import os
 from collections import defaultdict
 
-def load_json(input_file):
+def load_json_files(input_folder):
     """
-    Load JSON data from a file.
+    Load JSON data from all files in a directory, reading line-by-line.
+    Each line in a file represents a separate JSON object.
     """
-    with open(input_file, 'r') as f:
-        return json.load(f)
+    data = []
+    for file_name in os.listdir(input_folder):
+        if file_name.endswith(".json"):
+            with open(os.path.join(input_folder, file_name), 'r') as f:
+                for line in f:
+                    try:
+                        line_data = json.loads(line.strip())
+                        data.append(line_data)
+                    except json.JSONDecodeError as e:
+                        print(f"Skipping line in {file_name} due to error: {e}")
+    return data
 
 def save_json(data, output_file):
     """
@@ -51,7 +60,7 @@ def group_qa_pairs(data):
                 'task': task,
                 'task_idx': int(task_idx),
                 'question': qa['question'],
-                'answer': qa['answer']
+                'answer': qa['generated_text']
             })
         except ValueError as e:
             print(f"Skipping QA pair due to error: {e}")
@@ -66,7 +75,6 @@ def sort_tasks(qa_pairs):
     task_priority = {'perception': 1, 'prediction': 2, 'planning': 3, 'behavior': 4}
     
     def sort_key(qa):
-        # Assign a high number if task is not recognized
         priority = task_priority.get(qa['task'], 99)
         return (priority, qa['task_idx'])
     
@@ -78,17 +86,8 @@ def simplify_answer(question, answer):
     
     If the question asks to select from options, extract only the option letter.
     Otherwise, return the original answer.
-    
-    Args:
-        question (str): The question text.
-        answer (str): The original answer.
-        
-    Returns:
-        str: Simplified or original answer.
     """
-    # Check if the question contains "select the correct answer from the following options"
     if re.search(r'select the correct answer from the following options', question, re.IGNORECASE):
-        # Extract the option letter (e.g., "C.")
         match = re.match(r'^([A-D])\b', answer.strip(), re.IGNORECASE)
         if match:
             return match.group(1).upper()
@@ -104,18 +103,11 @@ def transform_data(grouped_data):
     transformed = []
     for scene_id, frames in grouped_data.items():
         for frame_id, qa_pairs in frames.items():
-            # Sort the QA pairs based on task priority and task index
             sorted_qas = sort_tasks(qa_pairs)
             
-            # Assign a new sequential index starting from 0
             for new_idx, qa in enumerate(sorted_qas):
-                # Modify the ID
                 new_id = f"{scene_id}_{frame_id}_{new_idx}"
-                
-                # Prepend "<image>\n" to the question
                 new_question = f"<image>\n{qa['question']}"
-                
-                # Simplify the answer if necessary
                 new_answer = simplify_answer(qa['question'], qa['answer'])
                 
                 transformed.append({
@@ -125,9 +117,9 @@ def transform_data(grouped_data):
                 })
     return transformed
 
-def main(input_file, output_file):
-    # Load the original JSON data
-    data = load_json(input_file)
+def main(input_folder, output_file):
+    # Load all JSON data from files in the input directory
+    data = load_json_files(input_folder)
     
     # Group QA pairs by scene and frame
     grouped = group_qa_pairs(data)
@@ -142,9 +134,8 @@ def main(input_file, output_file):
 
 if __name__ == "__main__":
     # Example usage:
-    # Replace 'input.json' with your input file path
+    # Replace 'input_folder' with your folder path containing JSON files
     # Replace 'output.json' with your desired output file path
-    input_folder = '/mnt/workspace/models/DriveLM/test/results/phi3.5'
-    output_folder = '/mnt/workspace/models/DriveLM/test/results/phi3.5'
-    main(input_folder, 
-         output_folder)
+    input_folder = '/home/shaoyux/models/DriveLM/res/phi3.5/prompt_1025_rc2/clean'
+    output_file = '/home/shaoyux/models/DriveLM/res/phi3.5/prompt_1025_rc2/clean.json'
+    main(input_folder, output_file)
