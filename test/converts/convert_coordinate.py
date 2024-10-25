@@ -13,8 +13,10 @@ def normalize_qa_coordinates(qa):
     for tasks, items in qa.items():
         # Extract all coordinates in the answer
         for item in items:
-            if 'A' in item:
-                answer = item['A']
+            for key in item.keys():
+                if key not in ['Q', 'A']:
+                    continue
+                answer = item[key]
                 coordinates = re.findall(r'\d+\.\d+', answer)
 
                 # If we find coordinate pairs, we proceed
@@ -25,24 +27,13 @@ def normalize_qa_coordinates(qa):
                     for i in range(len(coordinates)):
                         coordinates[i] = normalize_coordinates(coordinates[i])
 
+                    coordinates = [f'{coord[0]:.4f},{coord[1]:.4f}' for coord in coordinates]
+                    coord_iter = iter(coordinates)
+                    def replace_func(match):
+                        return next(coord_iter, match.group(0))
                     # Replace the original coordinates with the normalized values in the answer string
-                    updated_answer = re.sub(r'(\d+\.\d+,\d+\.\d+)', lambda m: f"{coordinates[0][0]:.4f},{coordinates[0][1]:.4f}", answer)
-                    item['A'] = updated_answer
-            if 'Q' in item:
-                question = item['Q']
-                coordinates = re.findall(r'\d+\.\d+', question)
-
-                # If we find coordinate pairs, we proceed
-                if len(coordinates) % 2 == 0:
-                    coordinates = np.array([float(x) for x in coordinates]).reshape(-1, 2)
-                    
-                    # Normalize each coordinate
-                    for i in range(len(coordinates)):
-                        coordinates[i] = normalize_coordinates(coordinates[i])
-
-                    # Replace the original coordinates with the normalized values in the answer string
-                    updated_question = re.sub(r'(\d+\.\d+,\d+\.\d+)', lambda m: f"{coordinates[0][0]:.4f},{coordinates[0][1]:.4f}", question)
-                    item['Q'] = updated_question
+                    updated_answer = re.sub(r'(\d+\.\d+,\d+\.\d+)', replace_func, answer)
+                    item[key] = updated_answer
     return qa
 
 # Main function to normalize coordinates in the entire JSON structure
