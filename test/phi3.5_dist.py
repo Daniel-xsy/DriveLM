@@ -49,12 +49,13 @@ def parse_arguments():
 
 class LLMPredictor:
     def __init__(self, model_name, system_prompt, sampling_params,
-                 tensor_parallel_size, corruption):
+                 num_images_per_prompt, max_model_len, tensor_parallel_size, corruption):
         # Create an LLM.
         self.llm = LLM(
             model=model_name,
             trust_remote_code=True,
-            max_model_len=4096,  # Can be args.max_model_len if needed
+            max_model_len=max_model_len,
+            limit_mm_per_prompt={"image": num_images_per_prompt},
             tensor_parallel_size=tensor_parallel_size
         )
         self.system_prompt = system_prompt
@@ -64,49 +65,56 @@ class LLMPredictor:
     def __call__(self, batch: Dict[str, Any]) -> Dict[str, Any]:
         # Generate texts from the prompts.
         sample_id = batch['id']
-        question = batch['question']
+        questions = batch['question']
         filenames = batch['images']
+        batch_size = len(filenames)
 
         # Load images and build image placeholders and multi_modal_data
-        image_placeholders = ''
-        multi_modal_data = {}
-        image_index = 1
+        image_placeholders = [''] * batch_size
+        multi_modal_datas = [dict(image=[]) for _ in range(batch_size)]
 
-        for img_path in filenames:
+        for idx, sample_filenames in enumerate(filenames):
             # Handle corruption if needed
-            if self.corruption and len(self.corruption) > 1 and self.corruption != 'NoImage':
-                img_path = img_path.replace('nuscenes/samples', f'val_data_corruption/{self.corruption}')
-            if self.corruption == 'NoImage':
-                # Generate a blank image
-                img = np.zeros((224, 224, 3), dtype=np.uint8)
-            else:
-                try:
-                    img = Image.open(img_path).convert('RGB')
-                    img = img.resize((224, 224))
-                except Exception as e:
-                    print(f"Error loading image: {img_path}, error: {e}")
-                    exit(1)
-            placeholder = f"<|image_{image_index}|>"
-            image_placeholders += placeholder + "\n"
-            # Add to multi_modal_data
-            multi_modal_data[placeholder] = img
-            image_index += 1
+            image_index = 1
+            for filename in sample_filenames:
+                img_path = filename
+                if self.corruption and len(self.corruption) > 1 and self.corruption != 'NoImage':
+                    img_path = img_path.replace('nuscenes/samples', f'val_data_corruption/{self.corruption}')
+                if self.corruption == 'NoImage':
+                    # Generate a blank image
+                    img = np.zeros((224, 224, 3), dtype=np.uint8)
+                else:
+                    try:
+                        img = Image.open(img_path).convert('RGB')
+                        img = img.resize((224, 224))
+                    except Exception as e:
+                        print(f"Error loading image: {img_path}, error: {e}")
+                        exit(1)
+                placeholder = f"<|image_{image_index}|>"
+                image_placeholders[idx] += placeholder + "\n"
+                # Add to multi_modal_data
+                multi_modal_datas[idx]["image"].append(img)
+                image_index += 1
 
         # Build the prompt
-        prompt = "<|user|>\n"
-        prompt += image_placeholders
+        prompts = ["<|user|>\n"] * batch_size
+        prompts = [prompt + image_placeholder for prompt, image_placeholder in zip(prompts, image_placeholders)]
 
         # Add system prompt if provided
         if self.system_prompt:
-            prompt += f"{self.system_prompt}\n"
+            prompts = [prompt + self.system_prompt for prompt in prompts]
 
         # Add question
-        prompt += str(question) + "\n<|end|>\n<|assistant|>\n"
+        prompts = [prompt + question + "\n<|end|>\n<|assistant|>\n" for prompt, question in zip(prompts, questions)]
+
+        # batch input list
+        batch_inputs = [{"prompt": prompt, "multi_modal_data": multi_modal_data} for prompt, multi_modal_data in zip(prompts, multi_modal_datas)]
 
         # Generate outputs
         outputs = self.llm.generate(
-            {"prompt": prompt, "multi_modal_data": multi_modal_data},
-            self.sampling_params
+            batch_inputs,
+            self.sampling_params,
+            use_tqdm=False
         )
 
         generated_text = []
@@ -114,7 +122,7 @@ class LLMPredictor:
             generated_text.append(output.outputs[0].text)
         return {
             "id": sample_id,
-            "question": question,
+            "question": questions,
             "generated_text": generated_text,
         }
 
@@ -165,6 +173,8 @@ def main():
             args.model,
             system_prompt,
             sampling_params,
+            args.num_images_per_prompt,
+            args.max_model_len,
             tensor_parallel_size,
             args.corruption
         ),
@@ -176,15 +186,15 @@ def main():
     )
 
     # Peek first 10 results
-    outputs = ds.take(10)
-    for output in outputs:
-        sample_id = output["id"]
-        question = output["question"]
-        generated_text = output["generated_text"]
-        print(f"ID: {sample_id}, Question: {question}, Generated text: {generated_text}")
+    # outputs = ds.take(10)
+    # for output in outputs:
+    #     sample_id = output["id"]
+    #     question = output["question"]
+    #     generated_text = output["generated_text"]
+    #     print(f"ID: {sample_id}, Question: {question}, Generated text: {generated_text}")
 
     # Write inference output data to output file
-    # ds.write_json(args.output)
+    ds.write_json(args.output)
 
 
 if __name__ == '__main__':

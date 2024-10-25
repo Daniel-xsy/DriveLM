@@ -1,10 +1,10 @@
 # BitError    CameraCrash  Fog        H256ABRCompression      LowLight    Rain      Snow
 # Brightness  ColorQuant   FrameLost  LensObstacleCorruption  MotionBlur  Saturate  ZoomBlur
 
-python dist_ex.py \
+python phi3.5_dist.py \
     --model 'microsoft/Phi-3.5-vision-instruct' \
     --data ../data/test/test_gpt_norm.json \
-    --output ./results/phi3.5/phi3.5_output.json \
+    --output ../res/phi3.5/clean \
     --system_prompt ./prompts/1017_fix.txt \
     --num_processes 4 \
     --corruption ''
