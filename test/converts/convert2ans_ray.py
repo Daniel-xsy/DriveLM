@@ -1,3 +1,5 @@
+## Convert the output of Ray distributed inference for evaluation
+
 import json
 import re
 import os
@@ -136,6 +138,6 @@ if __name__ == "__main__":
     # Example usage:
     # Replace 'input_folder' with your folder path containing JSON files
     # Replace 'output.json' with your desired output file path
-    input_folder = '/home/shaoyux/models/DriveLM/res/phi3.5/prompt_1025_rc2/clean'
-    output_file = '/home/shaoyux/models/DriveLM/res/phi3.5/prompt_1025_rc2/clean.json'
+    input_folder = '/home/shaoyux/models/DriveLM/res/llava-1.5-13b/baseline/clean'
+    output_file = '/home/shaoyux/models/DriveLM/res/llava-1.5-13b/baseline/clean.json'
     main(input_folder, output_file)
