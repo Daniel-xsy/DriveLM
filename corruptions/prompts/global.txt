@@ -10,20 +10,20 @@ Requirements:
 The number of question-answer pairs, the objects referenced, and the ground truth answers must remain unchanged. The questions should still reference the same objects or participants in the scene, but now adapted for the corruption context (e.g., snow, fog).
 
 2. Corruption context:
-Incorporate the specific corruption (e.g., snow, fog, motion blur) into the question-answer pairs while keeping the questions reasonable. The focus should be on how the corruption affects visibility, prediction, and planning in the scene.
+Incorporate the specific corruption (e.g., snow, fog, motion blur) into the question-answer pairs while keeping the questions reasonable. The focus should be on how the corruption affects visibility, prediction, and planning in the scene. You should also focus more on object-level questions instead of general questions (e.g., use the coordinate in the context).
 
 3. Robustness QA set:
 Create a new category of question-answer pairs specifically related to corruption robustness. These questions should assess:
-- Scene-level effect: Ask how the corruption impacts driving decisions of the ego vehicle.
-- Object-level effect: Ask how the corruption impacts the visibility of the surrounding vehicles.
+- Effect on driving: Ask how the corruption impacts driving decisions.
+- Corruption scene description: Ask for a description of the scene under corruption.
+
 
 4. Input:
-- Original question-answer pairs related to perception, prediction, planning, and behavior.
-- Corrupted images (snow, fog, motion blur, etc.).
 - Corruption context (e.g., which type of corruptions).
+- Corrupted images (snow, fog, motion blur, etc.).
+- Original question-answer pairs related to perception, prediction, planning, and behavior.
 
 5. Output:
 - A new set of robustness-related QA pairs that focus on corruption detection, driving impact, and scene descriptions under corruption.
-- Format the output as a list of dicts, dict elements are intervaled by '\n', the output can be parsed into a list of dict by using .split('\n) and then `json.loads()`.
-- Avoid using '\n' within one dict.
-- Generate 5 to 7 robustness-related questions.
+- Generate 4 to 5 robustness-related questions.
+- Each QA pair should follow this format and divide QA pairs using `\n`: {"Q": "question here.", "A": "answer here."}.
