@@ -10,7 +10,6 @@ from rich import print
 
 from utils.request import VLMAgent, NPImageEncode
 from utils.utils import convert_text_to_json
-from imagecorruptions import corrupt
 
 
 def preprocess_ans(ans_json):
@@ -71,12 +70,7 @@ def main(args):
                     img = cv2.imread(img_path_)
                     if img is None:
                         raise ValueError(f"Image not found: {img_path_}")
-                    # corrupt_img = corrupt(corruption_name='snow', severity=3, image=img)
-                    # if args.vis:
-                    #     img_save_path = img_path_.replace('/mnt/workspace/models/DriveLM/data/nuscenes', '/mnt/workspace/models/DriveLM/data/exs')
-                    #     if not os.path.exists(os.path.dirname(img_save_path)):
-                    #         os.makedirs(os.path.dirname(img_save_path))
-                    #     cv2.imwrite(img_save_path, corrupt_img)
+
                     gpt4v.addImageBase64(NPImageEncode(img))
                 gpt4v.addTextPrompt(str(data_))
                 # get the decision made by the driver agent
