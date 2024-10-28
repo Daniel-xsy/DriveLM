@@ -527,7 +527,7 @@ class BitError(BaseCorruption):
 class WaterSplashCorruption(BaseCorruption):
     def __init__(self, severity, norm_config):
         """
-        Create corruptions: 'Water Splash'.
+        Create corruptions: 'Water Splash' effect with Gaussian Blur and circular droplets.
         Args: 
             severity (int): severity of corruption, range (1, 5)
         """
@@ -538,20 +538,36 @@ class WaterSplashCorruption(BaseCorruption):
         return functools.partial(self.add_water_splash, severity=self.severity)
 
     def add_water_splash(self, x, severity):
-        intensity_map = {1: 0.1, 2: 0.3, 3: 0.5, 4: 0.7, 5: 0.9}
-        splash_intensity = intensity_map.get(severity, 0.5)
+        # Define severity mappings for number of droplets, blur kernel size, and droplet size range
+        num_droplets_map = {1: 10, 2: 20, 3: 30, 4: 40, 5: 50}  # Number of droplets
+        blur_map = {1: (7, 7), 2: (15, 15), 3: (21, 21), 4: (31, 31), 5: (51, 51)}  # Kernel size for GaussianBlur
+        size_range_map = {1: (5, 15), 2: (10, 20), 3: (15, 25), 4: (20, 30), 5: (25, 35)}  # Droplet radius range
 
-        x_pil = Image.fromarray(cv2.cvtColor(x, cv2.COLOR_BGR2RGB)).convert("RGBA")
-        splash_overlay = np.random.normal(128, 50, x.shape).astype(np.uint8)
-        splash_overlay = cv2.GaussianBlur(splash_overlay, (31, 31), 0)
+        # Get image dimensions and parameters based on severity
+        h, w, _ = x.shape
+        num_droplets = num_droplets_map.get(severity, 30)
+        kernel_size = blur_map.get(severity, (21, 21))
+        min_radius, max_radius = size_range_map.get(severity, (10, 20))
 
-        splash_mask = np.zeros_like(x)
-        splash_mask[:, :, :] = splash_overlay[:, :, np.newaxis]
-        splash_mask = Image.fromarray(splash_mask, 'RGBA')
+        # Create a copy of the image to add effects on
+        splash_effect = x.copy()
 
-        blended_image = Image.blend(x_pil, splash_mask, alpha=splash_intensity)
+        # Randomly place circles (water droplets) on the image
+        for _ in range(num_droplets):
+            radius = random.randint(min_radius, max_radius)
+            center_x = random.randint(radius, w - radius)
+            center_y = random.randint(radius, h - radius)
 
-        return cv2.cvtColor(np.array(blended_image), cv2.COLOR_RGBA2BGR)
+            # Draw a filled circle with a slight transparency
+            overlay = splash_effect.copy()
+            cv2.circle(overlay, (center_x, center_y), radius, (255, 255, 255), -1)
+            alpha = 0.2  # Transparency level
+            splash_effect = cv2.addWeighted(overlay, alpha, splash_effect, 1 - alpha, 0)
+
+        # Apply a blur effect to simulate water distortion
+        splash_effect = cv2.GaussianBlur(splash_effect, kernel_size, 0)
+
+        return splash_effect
 
     def __call__(self, img):
         """
@@ -563,11 +579,12 @@ class WaterSplashCorruption(BaseCorruption):
         
         img = deepcopy(img)
         B, M, C, H, W = img.size()
-        img = img.permute(0, 1, 3, 4, 2) # [B, M, C, H, W] => [B, M, H, W, C]
+        img = img.permute(0, 1, 3, 4, 2)  # [B, M, C, H, W] => [B, M, H, W, C]
         img = img * torch.tensor(std) + torch.tensor(mean)
         assert img.min() >= 0 and img.max() <= 255, "Image pixel out of range"
-        
+
         new_img = np.zeros_like(img)
+        new_img = img.numpy()
         for b in range(B):
             # Always corrupt the first image
             new_img[b, 0] = self.corrupt_func(np.uint8(img[b, 0].numpy()))
