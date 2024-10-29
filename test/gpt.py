@@ -40,12 +40,17 @@ def process_chunk(args):
             continue  # Skip already processed entries
 
         print(f"Processing ID: {entry_id}")
+        
+        ## TODO: hard code here
+        ## only evaluate the perception and behavior
+        if 'perception' not in entry_id and 'behavior' not in entry_id:
+            continue
         ans = None
 
         while ans is None:
             try:
                 # Initialize GPT4V instance
-                gpt4v = VLMAgent(api_key=api_key, model=model, max_tokens=4096)
+                gpt4v = VLMAgent(api_key=api_key, model=model, max_tokens=8192)
                 # Add system prompt
                 gpt4v.addTextPrompt(system_prompt)
 

@@ -94,7 +94,7 @@ class VLMAgent:
             "type": "image_url",
             "image_url": {
                 "url": f"data:image/jpeg;base64,{image_base64}",
-                "detail": "low"
+                # "detail": "low"
             }
         }
         self.content.append(imagePrompt)
@@ -124,7 +124,7 @@ class VLMAgent:
             "max_tokens": self.max_tokens,
         }
         response = requests.post(
-            "https://api.claudeshop.top/v1/chat/completions",
+            "https://api.openai.com/v1/chat/completions",
             headers=headers,
             json=payload
         )
