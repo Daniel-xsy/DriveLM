@@ -6,6 +6,6 @@ for file in ${PRED}/${PREFIX}*; do
     # Run the evaluation command on each file
     python evaluate/eval_behavior.py \
         "$file" \
-        ../data/QA_dataset_nus/drivelm_val_norm_final.json \
+        ../data/QA_dataset_nus/drivelm_val_norm_300.json \
         --thresh 0.05
 done

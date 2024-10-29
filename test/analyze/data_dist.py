@@ -1,4 +1,5 @@
 ## Data distribution in the GT dataset
+
 import re
 import json
 from collections import Counter
@@ -59,14 +60,13 @@ def analyze_data_distribution(data):
                         if 'Q' in item and 'A' in item:
                             question = item['Q']
                             answer = item['A']
-
                             # Determine question type
                             question_type = determine_question_type(question)
                             
                             if question_type == 'abcd':
                                 # Extract the content behind the selected ABCD answer
                                 selected_answer = answer.strip()
-                                content = extract_abcd_content(selected_answer, question)
+                                content = extract_abcd_content(answer, question)
                                 if content:
                                     abcd_count[content] += 1
 
@@ -81,7 +81,7 @@ def analyze_data_distribution(data):
 
 if __name__ == '__main__':
 
-    json_file = 'data/QA_dataset_nus/drivelm_val_norm_final.json'
+    json_file = '/home/shaoyux/models/DriveLM/data/QA_dataset_nus/drivelm_train_final_v2.json'
     with open(json_file, 'r') as f:
         json_data = json.load(f)
 

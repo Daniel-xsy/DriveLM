@@ -48,8 +48,8 @@ def normalize_json_coordinates(data):
 
 if __name__ == '__main__':
     # Load the JSON data
-    json_file = '/home/shaoyux/models/DriveLM/data/QA_dataset_nus/drivelm_val.json'
-    output_file = '/home/shaoyux/models/DriveLM/data/QA_dataset_nus/drivelm_val_norm.json'
+    json_file = '/home/shaoyux/models/DriveLM/data/QA_dataset_nus/drivelm_train_300_final_v2.json'
+    output_file = '/home/shaoyux/models/DriveLM/data/QA_dataset_nus/drivelm_train_300_final_v2_norm.json'
     
     with open(json_file, 'r') as f:
         json_data = json.load(f)

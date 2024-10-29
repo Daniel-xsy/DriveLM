@@ -37,6 +37,6 @@ def convert_to_gpt_format(input_file, output_file):
         json.dump(output, f, indent=4)
 
 if __name__ == '__main__':
-    input_file = 'data/QA_dataset_nus/drivelm_val_norm_final.json'  # Update with your actual input file path
-    output_file = 'data/test/test_gpt_norm_final.json'
+    input_file = '/home/shaoyux/models/DriveLM/data/QA_dataset_nus/drivelm_train_300_final_v2_norm.json'  # Update with your actual input file path
+    output_file = '/home/shaoyux/models/DriveLM/data/test/test_gpt_drivelm_train_300_final_v2_norm.json'
     convert_to_gpt_format(input_file, output_file)

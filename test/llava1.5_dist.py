@@ -186,20 +186,20 @@ def main():
         # Set the concurrency to the number of LLM instances
         concurrency=num_instances,
         # Specify the batch size for inference
-        batch_size=32,
+        batch_size=16,
         **resources_kwarg,
     )
 
     # # Peek first 10 results
-    outputs = ds.take(1)
-    for output in outputs:
-        sample_id = output["id"]
-        question = output["question"]
-        generated_text = output["generated_text"]
-        print(f"ID: {sample_id}, Question: {question}, Generated text: {generated_text}")
+    # outputs = ds.take(1)
+    # for output in outputs:
+    #     sample_id = output["id"]
+    #     question = output["question"]
+    #     generated_text = output["generated_text"]
+    #     print(f"ID: {sample_id}, Question: {question}, Generated text: {generated_text}")
 
     # Write inference output data to output file
-    # ds.write_json(args.output)
+    ds.write_json(args.output)
 
 
 if __name__ == '__main__':
