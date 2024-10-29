@@ -4,6 +4,7 @@
 import json
 import re
 
+
 def load_predictions(prediction_file):
     with open(prediction_file, 'r') as f:
         predictions = json.load(f)
@@ -34,7 +35,7 @@ def is_going_ahead(option_text):
 def is_going_straight(option_text):
     return "going straight" in option_text.lower()
 
-def process_input_file(input_file, predictions):
+def process_input_file(input_file, predictions, quota):
     with open(input_file, 'r') as f:
         input_data = json.load(f)
     
@@ -91,6 +92,12 @@ def process_input_file(input_file, predictions):
                 if 'key_frames' not in filtered_data.get(scene_token, {}):
                     filtered_data[scene_token] = {'key_frames': {}}
                 filtered_data[scene_token]['key_frames'][key_frame_token] = key_frame_data
+            elif (perception_wrong or behavior_wrong) and quota > 0:
+                # Keep the key frame
+                if 'key_frames' not in filtered_data.get(scene_token, {}):
+                    filtered_data[scene_token] = {'key_frames': {}}
+                filtered_data[scene_token]['key_frames'][key_frame_token] = key_frame_data
+                quota -= 1
         if filtered_data.get(scene_token, {}).get('key_frames', {}):
             filtered_data[scene_token]['key_frames'] = filtered_data[scene_token]['key_frames']
     return filtered_data
@@ -98,10 +105,14 @@ def process_input_file(input_file, predictions):
 def main():
     input_file = 'data/QA_dataset_nus/drivelm_val_norm.json'  # Replace with your input file path
     prediction_file = '/home/shaoyux/models/DriveLM/res/gpt4o_mini/1017/gpt4o_output_convert.json'  # Replace with your prediction output file path
-    output_file = 'data/QA_dataset_nus/drivelm_val_norm_final.json'  # Output file to save the filtered data
-
+    output_file = 'data/QA_dataset_nus/drivelm_val_norm_300.json'  # Output file to save the filtered data
+    
+    # after the original filtering, we have 274 key frames left
+    # add it up to 300
+    quota = 26  
+    
     predictions = load_predictions(prediction_file)
-    filtered_data = process_input_file(input_file, predictions)
+    filtered_data = process_input_file(input_file, predictions, quota)
 
     with open(output_file, 'w') as f:
         json.dump(filtered_data, f, indent=4)
