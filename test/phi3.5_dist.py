@@ -79,7 +79,7 @@ class LLMPredictor:
             for filename in sample_filenames:
                 img_path = filename
                 if self.corruption and len(self.corruption) > 1 and self.corruption != 'NoImage':
-                    img_path = img_path.replace('nuscenes/samples', f'val_data_corruption/{self.corruption}')
+                    img_path = img_path.replace('nuscenes/samples', f'train_data_corruption/{self.corruption}')
                 if self.corruption == 'NoImage':
                     # Generate a blank image
                     img = np.zeros((224, 224, 3), dtype=np.uint8)
@@ -186,7 +186,7 @@ def main():
         # Set the concurrency to the number of LLM instances
         concurrency=num_instances,
         # Specify the batch size for inference
-        batch_size=32,
+        batch_size=64,
         **resources_kwarg,
     )
 
