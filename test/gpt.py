@@ -39,6 +39,8 @@ def process_chunk(args):
         if entry_id in existing_results:
             continue  # Skip already processed entries
 
+        if not "perception" in entry_id and not "behavior" in entry_id:
+            continue
         print(f"Processing ID: {entry_id}")
         ans = None
 
