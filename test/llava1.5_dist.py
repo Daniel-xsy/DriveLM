@@ -79,7 +79,7 @@ class LLMPredictor:
             for filename in sample_filenames:
                 img_path = filename
                 if self.corruption and len(self.corruption) > 1 and self.corruption != 'NoImage':
-                    img_path = img_path.replace('nuscenes/samples', f'val_data_corruption/{self.corruption}')
+                    img_path = img_path.replace('nuscenes/samples', f'train_data_corruption/{self.corruption}')
                 if self.corruption == 'NoImage':
                     # Generate a blank image
                     img = np.zeros((224, 224, 3), dtype=np.uint8)
@@ -121,6 +121,14 @@ class LLMPredictor:
             self.sampling_params,
             use_tqdm=False
         )
+
+        if outputs is None:
+            print("Error: outputs is None")
+            return {
+                "id": sample_id,
+                "question": questions,
+                "generated_text": None,
+            }
 
         generated_text = []
         for output in outputs:
@@ -191,15 +199,15 @@ def main():
     )
 
     # # Peek first 10 results
-    outputs = ds.take(1)
-    for output in outputs:
-        sample_id = output["id"]
-        question = output["question"]
-        generated_text = output["generated_text"]
-        print(f"ID: {sample_id}, Question: {question}, Generated text: {generated_text}")
+    # outputs = ds.take(1)
+    # for output in outputs:
+    #     sample_id = output["id"]
+    #     question = output["question"]
+    #     generated_text = output["generated_text"]
+    #     print(f"ID: {sample_id}, Question: {question}, Generated text: {generated_text}")
 
     # Write inference output data to output file
-    # ds.write_json(args.output)
+    ds.write_json(args.output)
 
 
 if __name__ == '__main__':
