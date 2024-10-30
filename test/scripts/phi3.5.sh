@@ -8,18 +8,10 @@ python phi3.5_dist.py \
     --output ../res/phi3.5/baseline/clean \
     --system_prompt ./prompts/baseline.txt \
     --num_processes 8 \
-    --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
-    --output ../res/phi3.5/baseline/clean \
-    --system_prompt ./prompts/baseline.txt \
-    --num_processes 8 \
     --corruption ''
 
 python phi3.5_dist.py \
-python phi3.5_dist.py \
     --model 'microsoft/Phi-3.5-vision-instruct' \
-    --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
-    --output ../res/phi3.5/baseline/biterror \
-    --system_prompt ./prompts/baseline.txt \
     --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
     --output ../res/phi3.5/baseline/biterror \
     --system_prompt ./prompts/baseline.txt \
@@ -27,11 +19,7 @@ python phi3.5_dist.py \
     --corruption 'BitError'
 
 python phi3.5_dist.py \
-python phi3.5_dist.py \
     --model 'microsoft/Phi-3.5-vision-instruct' \
-    --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
-    --output ../res/phi3.5/baseline/cameracrash \
-    --system_prompt ./prompts/baseline.txt \
     --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
     --output ../res/phi3.5/baseline/cameracrash \
     --system_prompt ./prompts/baseline.txt \
@@ -39,11 +27,7 @@ python phi3.5_dist.py \
     --corruption 'CameraCrash'
 
 python phi3.5_dist.py \
-python phi3.5_dist.py \
     --model 'microsoft/Phi-3.5-vision-instruct' \
-    --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
-    --output ../res/phi3.5/baseline/fog \
-    --system_prompt ./prompts/baseline.txt \
     --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
     --output ../res/phi3.5/baseline/fog \
     --system_prompt ./prompts/baseline.txt \
@@ -51,11 +35,7 @@ python phi3.5_dist.py \
     --corruption 'Fog'
 
 python phi3.5_dist.py \
-python phi3.5_dist.py \
     --model 'microsoft/Phi-3.5-vision-instruct' \
-    --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
-    --output ../res/phi3.5/baseline/h256 \
-    --system_prompt ./prompts/baseline.txt \
     --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
     --output ../res/phi3.5/baseline/h256 \
     --system_prompt ./prompts/baseline.txt \
@@ -63,11 +43,7 @@ python phi3.5_dist.py \
     --corruption 'H256ABRCompression'
 
 python phi3.5_dist.py \
-python phi3.5_dist.py \
     --model 'microsoft/Phi-3.5-vision-instruct' \
-    --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
-    --output ../res/phi3.5/baseline/lowlight \
-    --system_prompt ./prompts/baseline.txt \
     --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
     --output ../res/phi3.5/baseline/lowlight \
     --system_prompt ./prompts/baseline.txt \
@@ -75,11 +51,7 @@ python phi3.5_dist.py \
     --corruption 'LowLight'
 
 python phi3.5_dist.py \
-python phi3.5_dist.py \
     --model 'microsoft/Phi-3.5-vision-instruct' \
-    --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
-    --output ../res/phi3.5/baseline/rain \
-    --system_prompt ./prompts/baseline.txt \
     --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
     --output ../res/phi3.5/baseline/rain \
     --system_prompt ./prompts/baseline.txt \
@@ -87,11 +59,7 @@ python phi3.5_dist.py \
     --corruption 'Rain'
 
 python phi3.5_dist.py \
-python phi3.5_dist.py \
     --model 'microsoft/Phi-3.5-vision-instruct' \
-    --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
-    --output ../res/phi3.5/baseline/snow \
-    --system_prompt ./prompts/baseline.txt \
     --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
     --output ../res/phi3.5/baseline/snow \
     --system_prompt ./prompts/baseline.txt \
@@ -99,11 +67,7 @@ python phi3.5_dist.py \
     --corruption 'Snow'
 
 python phi3.5_dist.py \
-python phi3.5_dist.py \
     --model 'microsoft/Phi-3.5-vision-instruct' \
-    --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
-    --output ../res/phi3.5/baseline/bright \
-    --system_prompt ./prompts/baseline.txt \
     --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
     --output ../res/phi3.5/baseline/bright \
     --system_prompt ./prompts/baseline.txt \
@@ -111,89 +75,41 @@ python phi3.5_dist.py \
     --corruption 'Brightness'
 
 python phi3.5_dist.py \
-python phi3.5_dist.py \
     --model 'microsoft/Phi-3.5-vision-instruct' \
-    --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
-    --output ../res/phi3.5/baseline/colorquant \
-    --system_prompt ./prompts/baseline.txt \
     --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
     --output ../res/phi3.5/baseline/colorquant \
     --system_prompt ./prompts/baseline.txt \
     --num_processes 8 \
     --corruption 'ColorQuant'
 
-python phi3.5_dist.py \
-python phi3.5_dist.py \
+python vlm.py \
     --model 'microsoft/Phi-3.5-vision-instruct' \
-    --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
-    --output ../res/phi3.5/baseline/framelost \
-    --system_prompt ./prompts/baseline.txt \
-    --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
-    --output ../res/phi3.5/baseline/framelost \
-    --system_prompt ./prompts/baseline.txt \
+    --data ../data/test/test_gpt_norm.json \
+    --output ./results/phi3.5/phi3.5_output_framelost.json \
+    --system_prompt ./prompts/1017_fix.txt \
     --num_processes 8 \
     --corruption 'FrameLost'
 
-python phi3.5_dist.py \
+python vlm.py \
     --model 'microsoft/Phi-3.5-vision-instruct' \
-    --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
-    --output ../res/phi3.5/baseline/motion \
-    --system_prompt ./prompts/baseline.txt \
+    --data ../data/test/test_gpt_norm.json \
+    --output ./results/phi3.5/phi3.5_output_motion.json \
+    --system_prompt ./prompts/1017_fix.txt \
     --num_processes 8 \
     --corruption 'MotionBlur'
 
-python phi3.5_dist.py \
-python phi3.5_dist.py \
+python vlm.py \
     --model 'microsoft/Phi-3.5-vision-instruct' \
-    --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
-    --output ../res/phi3.5/baseline/saturate \
-    --system_prompt ./prompts/baseline.txt \
-    --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
-    --output ../res/phi3.5/baseline/saturate \
-    --system_prompt ./prompts/baseline.txt \
+    --data ../data/test/test_gpt_norm.json \
+    --output ./results/phi3.5/phi3.5_output_saturate.json \
+    --system_prompt ./prompts/1017_fix.txt \
     --num_processes 8 \
     --corruption 'Saturate'
 
-python phi3.5_dist.py \
-python phi3.5_dist.py \
+python vlm.py \
     --model 'microsoft/Phi-3.5-vision-instruct' \
-    --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
-    --output ../res/phi3.5/baseline/zoom \
-    --system_prompt ./prompts/baseline.txt \
-    --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
-    --output ../res/phi3.5/baseline/zoom \
-    --system_prompt ./prompts/baseline.txt \
+    --data ../data/test/test_gpt_norm.json \
+    --output ./results/phi3.5/phi3.5_output_zoom.json \
+    --system_prompt ./prompts/1017_fix.txt \
     --num_processes 8 \
     --corruption 'ZoomBlur'
-
-python phi3.5_dist.py \
-    --model 'microsoft/Phi-3.5-vision-instruct' \
-    --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
-    --output ../res/phi3.5/baseline/len \
-    --system_prompt ./prompts/baseline.txt \
-    --num_processes 8 \
-    --corruption 'LensObstacleCorruption'
-
-python phi3.5_dist.py \
-    --model 'microsoft/Phi-3.5-vision-instruct' \
-    --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
-    --output ../res/phi3.5/baseline/water \
-    --system_prompt ./prompts/baseline.txt \
-    --num_processes 8 \
-    --corruption 'WaterSplashCorruption'
-
-python phi3.5_dist.py \
-    --model 'microsoft/Phi-3.5-vision-instruct' \
-    --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
-    --output ../res/phi3.5/baseline/len \
-    --system_prompt ./prompts/baseline.txt \
-    --num_processes 8 \
-    --corruption 'LensObstacleCorruption'
-
-python phi3.5_dist.py \
-    --model 'microsoft/Phi-3.5-vision-instruct' \
-    --data ../data/test/test_gpt_drivelm_train_300_final_v2_norm.json \
-    --output ../res/phi3.5/baseline/water \
-    --system_prompt ./prompts/baseline.txt \
-    --num_processes 8 \
-    --corruption 'WaterSplashCorruption'
