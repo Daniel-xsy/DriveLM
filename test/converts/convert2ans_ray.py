@@ -138,6 +138,13 @@ if __name__ == "__main__":
     # Example usage:
     # Replace 'input_folder' with your folder path containing JSON files
     # Replace 'output.json' with your desired output file path
-    input_folder = '/home/shaoyux/models/DriveLM/res/llava-1.5-13b/baseline/clean'
-    output_file = '/home/shaoyux/models/DriveLM/res/llava-1.5-13b/baseline/clean.json'
-    main(input_folder, output_file)
+
+    corruptions = [
+        'biterror', 'bright', 'cameracrash', 'clean', 'colorquant', 'fog', 'framelost', 'h256', 'len',
+        'lowlight', 'motion', 'rain', 'saturate', 'snow', 'zoom'
+    ]
+
+    for corruption in corruptions:
+        input_folder = f'/mnt/workspace/models/DriveLM/res/phi3.5/baseline/{corruption}'
+        output_file = f'/mnt/workspace/models/DriveLM/res/phi3.5/baseline/{corruption}.json'
+        main(input_folder, output_file)
