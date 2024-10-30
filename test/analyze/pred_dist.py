@@ -76,6 +76,10 @@ def analyze_data_distribution(data, pred_data):
                     question_type = determine_question_type(question)
                     
                     pred_token = f'{scene_token}_{key_frame_token}_{idx}'
+                    
+                    # support partial prediction file
+                    if pred_token not in pred_data:
+                        continue
                     pred_answer = pred_data[pred_token]['answer']
 
                     if question_type == 'abcd':
@@ -120,7 +124,7 @@ def plot_heatmap(confusion_data, title):
 
 if __name__ == '__main__':
     json_file = 'data/QA_dataset_nus/drivelm_train_300_final_v2_norm.json'
-    pred_file = '/home/shaoyux/models/DriveLM/res/phi3.5/baseline/clean.json'
+    pred_file = '/home/shaoyux/models/DriveLM/res/gpt4o/baseline/clean_perception_behavior_convert.json'
     
     with open(pred_file, 'r') as f:
         pred_data = json.load(f)
