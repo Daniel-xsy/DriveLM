@@ -119,8 +119,8 @@ def plot_heatmap(confusion_data, title):
     plt.savefig(f'{title}.pdf')
 
 if __name__ == '__main__':
-    json_file = '/home/shaoyux/models/DriveLM/data/QA_dataset_nus/drivelm_val_norm_final.json'
-    pred_file = '/home/shaoyux/models/DriveLM/res/gpt4o_mini/1025_rc2/clean_p1p4_convert.json'
+    json_file = 'data/QA_dataset_nus/drivelm_val_norm_300.json'
+    pred_file = '/home/shaoyux/models/DriveLM/res/llava-1.5-13b/baseline/rain.json'
     
     with open(pred_file, 'r') as f:
         pred_data = json.load(f)
