@@ -84,8 +84,8 @@ class evaluation_suit():
         print("evaluation start!")
         scores = {}
         # scores["accuracy"] = self.eval_acc()
-        scores["language"] = self.eval_language()
-        # scores["chatGPT"] = self.eval_chatGPT(self.GPT)
+        # scores["language"] = self.eval_language()
+        scores["chatGPT"] = self.eval_chatGPT(self.GPT)
 
 
 if __name__ == '__main__':
