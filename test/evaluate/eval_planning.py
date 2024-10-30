@@ -71,25 +71,21 @@ class evaluation_suit():
         return scores
 
     def forward(self, tag, answer, GT):
-        if 3 in tag:
+        if 1 in tag:
             
             self.language["GT"].append(GT)
             self.language["answer"].append(answer)
             
             self.GPT.append((answer, GT))
-            
-        elif 0 in tag:
-            self.accuracy["answer"].append(answer)
-            self.accuracy["GT"].append(GT)
         else:
             raise NotImplementedError(f'Tag {tag} not implemented for perception task')
             
     def evaluation(self):
         print("evaluation start!")
         scores = {}
-        scores["accuracy"] = self.eval_acc()
-        scores["language"] = self.eval_language()
-        # scores["chatGPT"] = self.eval_chatGPT(self.GPT)
+        # scores["accuracy"] = self.eval_acc()
+        # scores["language"] = self.eval_language()
+        scores["chatGPT"] = self.eval_chatGPT(self.GPT)
 
 
 if __name__ == '__main__':
@@ -125,7 +121,7 @@ if __name__ == '__main__':
                 # make sure the index is the same
                 # the official extract data order the index throughout the task
                 # here we only evaluate perception task
-                task_question_list = [qa_pairs['Q'] for qa_pairs in frame_data_qa["prediction"]]
+                task_question_list = [qa_pairs['Q'] for qa_pairs in frame_data_qa["planning"]]
                 if question not in task_question_list:
                     continue
                 GT = qa['A']
