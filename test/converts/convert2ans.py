@@ -94,7 +94,13 @@ def simplify_answer(question, answer):
             return match.group(1).upper()
     return answer
 
-def transform_data(grouped_data):
+def fetch_offset(task, task_idx, gt_data):
+    task_order = {'perception': 0, 'prediction': 1, 'planning': 2, 'behavior': 3}
+    task_num = [len(gt_data['perception']), len(gt_data['prediction']), len(gt_data['planning']), len(gt_data['behavior'])]
+    offset = sum(task_num[:task_order[task]]) + task_idx
+    return offset
+
+def transform_data(grouped_data, gt_data):
     """
     Transform the grouped QA pairs into the desired output format.
     
@@ -109,8 +115,15 @@ def transform_data(grouped_data):
             
             # Assign a new sequential index starting from 0
             for new_idx, qa in enumerate(sorted_qas):
-                # Modify the ID
-                new_id = f"{scene_id}_{frame_id}_{new_idx}"
+
+                task = qa['task']
+                task_idx = qa['task_idx']
+                gt_data_item = gt_data[scene_id]['key_frames'][frame_id]['QA']
+                idx = fetch_offset(task, task_idx, gt_data_item)
+                
+                # BUG: the new_idx is mismatch when only evaluate a subset of tasks
+                # new_id = f"{scene_id}_{frame_id}_{new_idx}"
+                new_id = f"{scene_id}_{frame_id}_{idx}"
                 
                 # Prepend "<image>\n" to the question
                 new_question = f"<image>\n{qa['question']}"
@@ -125,7 +138,7 @@ def transform_data(grouped_data):
                 })
     return transformed
 
-def main(input_file, output_file):
+def main(input_file, output_file, gt_file):
     # Load the original JSON data
     data = load_json(input_file)
     
@@ -133,7 +146,7 @@ def main(input_file, output_file):
     grouped = group_qa_pairs(data)
     
     # Transform the grouped data
-    transformed = transform_data(grouped)
+    transformed = transform_data(grouped, gt_file)
     
     # Save the transformed data to a new JSON file
     save_json(transformed, output_file)
@@ -141,8 +154,13 @@ def main(input_file, output_file):
     print(f"Transformation complete. Output saved to '{output_file}'.")
 
 if __name__ == "__main__":
-    # Example usage:
-    # Replace 'input.json' with your input file path
-    # Replace 'output.json' with your desired output file path
-    main('/mnt/workspace/models/DriveLM/test/results/phi3.5/phi3.5_output.json', 
-        '/mnt/workspace/models/DriveLM/test/results/phi3.5/phi3.5_output_convert.json')
+    
+    input_file = '/home/shaoyux/models/DriveLM/res/gpt4o/baseline/clean_perception_behavior.json'
+    output_file = '/home/shaoyux/models/DriveLM/res/gpt4o/baseline/clean_perception_behavior_convert.json'
+    
+    # make sure the index is matched
+    gt_file = '/home/shaoyux/models/DriveLM/data/QA_dataset_nus/drivelm_train_300_final_v2_norm.json'
+    with open(gt_file, 'r') as f:
+        gt_data = json.load(f)
+    
+    main(input_file, output_file, gt_data)
