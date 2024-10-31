@@ -157,6 +157,11 @@ if __name__ == '__main__':
                 tag = qa['tag']
                 
                 idx = scene_id + "_" + frame_id + "_" + str(i)
+                
+                if idx not in pred_file:
+                    print(f"[Warning] idx {idx} not in pred_file")
+                    continue
+                
                 predict = pred_file[idx]["answer"]
                 res = evaluation.forward(tag, predict, GT)
                     

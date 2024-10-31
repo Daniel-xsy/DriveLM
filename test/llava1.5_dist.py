@@ -15,6 +15,7 @@ from packaging.version import Version
 from ray.util.scheduling_strategies import PlacementGroupSchedulingStrategy
 
 from vllm import LLM, SamplingParams
+from utils import replace_system_prompt
 
 assert Version(ray.__version__) >= Version(
     "2.22.0"), "Ray version must be at least 2.22.0"
@@ -72,10 +73,12 @@ class LLMPredictor:
         # Load images and build image placeholders and multi_modal_data
         image_placeholders = [''] * batch_size
         multi_modal_datas = [dict(image=[]) for _ in range(batch_size)]
+        system_prompts = [self.system_prompt] * batch_size
 
         for idx, sample_filenames in enumerate(filenames):
             # Handle corruption if needed
             image_index = 1
+            system_prompts[idx] = replace_system_prompt(system_prompts[idx], sample_filenames)
             for filename in sample_filenames:
                 img_path = filename
                 if self.corruption and len(self.corruption) > 1 and self.corruption != 'NoImage':
@@ -101,8 +104,7 @@ class LLMPredictor:
         prompts = [prompt + image_placeholder for prompt, image_placeholder in zip(prompts, image_placeholders)]
 
         # Add system prompt if provided
-        if self.system_prompt:
-            prompts = [prompt + self.system_prompt for prompt in prompts]
+        prompts = [prompt + system_prompt for prompt in zip(prompts, system_prompts)]
 
         # Add question
         prompts = [prompt + question + "\nASSISTANT:" for prompt, question in zip(prompts, questions)]
@@ -135,6 +137,7 @@ class LLMPredictor:
             generated_text.append(output.outputs[0].text)
         return {
             "id": sample_id,
+            "system": system_prompts,
             "question": questions,
             "generated_text": generated_text,
         }

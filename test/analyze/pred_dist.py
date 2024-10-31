@@ -1,3 +1,4 @@
+import argparse
 import re
 import json
 from collections import Counter, defaultdict
@@ -79,6 +80,8 @@ def analyze_data_distribution(data, pred_data):
                     
                     # support partial prediction file
                     if pred_token not in pred_data:
+                        print(f"Missing prediction for {pred_token}")
+                        idx += 1
                         continue
                     pred_answer = pred_data[pred_token]['answer']
 
@@ -123,14 +126,16 @@ def plot_heatmap(confusion_data, title):
     plt.savefig(f'{title}.pdf')
 
 if __name__ == '__main__':
-    json_file = 'data/QA_dataset_nus/drivelm_train_300_final_v2_norm.json'
-    pred_file = '/home/shaoyux/models/DriveLM/res/gpt4o/baseline/clean_perception_behavior_convert.json'
+    args = argparse.ArgumentParser(description='Analyze Prediction Distribution')
+    args.add_argument('pred_file', type=str, help='path to the prediction JSON file')
+    args.add_argument('--json_file', type=str, default='../data/QA_dataset_nus/drivelm_train_300_final_v3_norm_abc.json',help='path to the JSON file')
+    args = args.parse_args()
     
-    with open(pred_file, 'r') as f:
+    with open(args.pred_file, 'r') as f:
         pred_data = json.load(f)
     pred_data = {pred_data[i]["id"]: pred_data[i] for i in range(len(pred_data))}
         
-    with open(json_file, 'r') as f:
+    with open(args.json_file, 'r') as f:
         json_data = json.load(f)
 
     # Analyze the data
