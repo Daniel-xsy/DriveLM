@@ -15,7 +15,7 @@ from packaging.version import Version
 from ray.util.scheduling_strategies import PlacementGroupSchedulingStrategy
 
 from vllm import LLM, SamplingParams
-from utils import replace_system_prompt
+from utils.utils import replace_system_prompt
 
 assert Version(ray.__version__) >= Version(
     "2.22.0"), "Ray version must be at least 2.22.0"
@@ -104,7 +104,7 @@ class LLMPredictor:
         prompts = [prompt + image_placeholder for prompt, image_placeholder in zip(prompts, image_placeholders)]
 
         # Add system prompt if provided
-        prompts = [prompt + system_prompt for prompt in zip(prompts, system_prompts)]
+        prompts = [prompt + system_prompt for prompt, system_prompt in zip(prompts, system_prompts)]
 
         # Add question
         prompts = [prompt + question + "\nASSISTANT:" for prompt, question in zip(prompts, questions)]
