@@ -11,6 +11,7 @@ import time
 from datetime import datetime
 
 from utils.request import NPImageEncode, VLMAgent
+from utils.utils import replace_system_prompt
 
 def process_chunk(args):
     chunk_file, output_file, model, api_key, system_prompt_file, corruption = args
@@ -39,8 +40,10 @@ def process_chunk(args):
         if entry_id in existing_results:
             continue  # Skip already processed entries
 
-        if not "perception" in entry_id and not "behavior" in entry_id:
+        # TODO: temporally hardcode to skip non-perception questions
+        if not "perception" in entry_id and not "behavior" in entry['question']:
             continue
+        
         print(f"Processing ID: {entry_id}")
         ans = None
 
@@ -49,12 +52,13 @@ def process_chunk(args):
                 # Initialize GPT4V instance
                 gpt4v = VLMAgent(api_key=api_key, model=model, max_tokens=4096)
                 # Add system prompt
-                gpt4v.addTextPrompt(system_prompt)
+                new_system_prompt = replace_system_prompt(system_prompt, entry['images'])
+                gpt4v.addTextPrompt(new_system_prompt)
 
                 # Add images
                 for img_path in entry['images']:
                     if len(corruption) > 1 and corruption != 'NoImage':
-                        img_path = img_path.replace('nuscenes/samples', f'val_data_corruption/{corruption}')
+                        img_path = img_path.replace('nuscenes/samples', f'train_data_corruption/{corruption}')
                     img = cv2.imread(img_path)
                     if img is None:
                         print(f"Error loading image: {img_path}")
@@ -74,7 +78,7 @@ def process_chunk(args):
                     time.sleep(1)  # Wait before retrying
                 else:
                     # Store the result
-                    result_entry = {'id': entry_id, 'question': entry['question'], 'answer': ans}
+                    result_entry = {'id': entry_id, 'system': new_system_prompt, 'question': entry['question'], 'answer': ans}
                     results.append(result_entry)
 
                     # Save intermediate results
