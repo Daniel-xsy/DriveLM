@@ -1,5 +1,3 @@
-# Evaluate F1 score and accuracy for perception task
-
 import re
 import argparse
 import json
@@ -16,7 +14,8 @@ from gpt_eval_request import GPTEvaluation
 
 
 class evaluation_suit():
-    def __init__(self, api_key, thresh=0.05):
+    def __init__(self, api_key, eval_gpt):
+        self.eval_gpt = eval_gpt
         self.language_eval = language_evaluation.CocoEvaluator(coco_types=["BLEU", "ROUGE_L", "CIDEr"])
         self.chatgpt_eval = GPTEvaluation(api_key)
         self.GPT = []
@@ -89,7 +88,8 @@ class evaluation_suit():
         scores = {}
         scores["accuracy"] = self.eval_acc()
         scores["language"] = self.eval_language()
-        # scores["chatGPT"] = self.eval_chatGPT(self.GPT)
+        if self.eval_gpt:
+            scores["chatGPT"] = self.eval_chatGPT(self.GPT)
 
 
 if __name__ == '__main__':
@@ -97,12 +97,16 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Evaluation')
     parser.add_argument('root_path1', type=str, help='path to prediction file')
     parser.add_argument('gt_path', type=str, help='path to test file')
-    parser.add_argument('api_key', type=str, help='OpenAI API key')
-    parser.add_argument('--thresh', type=float, default=0.05, help='threshold for match evaluation',)
+    parser.add_argument('--api_key', type=str, default='', required=False, help='OpenAI API key')
+    parser.add_argument('--eval_gpt', action='store_true', required=False, help='whether to evaluate GPT score')
     args = parser.parse_args()
     
+    if args.eval_gpt:
+        if args.api_key == '':
+            raise ValueError("Please provide the OpenAI API key")
+    
     print('\n############')
-    print(f'Evaluating {args.root_path1} for task PERCEPTION\n')
+    print(f'Evaluating {args.root_path1} for task PREDICTION\n')
 
     with open(args.root_path1, 'r') as f :#, \    
         pred_file = json.load(f)
@@ -111,7 +115,7 @@ if __name__ == '__main__':
     with open(args.gt_path, 'r') as f:
         test_file = json.load(f)
 
-    evaluation = evaluation_suit(args.api_key, args.thresh)
+    evaluation = evaluation_suit(args.api_key, args.eval_gpt)
     for scene_id in test_file.keys():
         scene_data = test_file[scene_id]['key_frames']
 

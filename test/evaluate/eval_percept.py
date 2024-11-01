@@ -1,23 +1,47 @@
-# Evaluate F1 score and accuracy for perception task
-
 import re
 import argparse
 import json
 import random
 import numpy as np
 import torch.nn as nn
+import language_evaluation
 from multiprocessing import Pool
+from sklearn.metrics import f1_score
 
 import sys
 sys.path.append(".")
 from utils.utils import preprocess_answer
+from gpt_eval_request import GPTEvaluation
 
 
 class evaluation_suit():
-    def __init__(self, thresh=0.05):
-        self.thresh = thresh
+    def __init__(self, api_key: str, eval_gpt: bool):
+        self.eval_gpt = eval_gpt
+        self.language_eval = language_evaluation.CocoEvaluator(coco_types=["BLEU", "ROUGE_L", "CIDEr"])
+        self.chatgpt_eval = GPTEvaluation(api_key)
+        self.GPT = []
         self.accuracy = {"answer": [], "GT": []}
-        self.match = {"answer": [], "GT": []}
+        self.language = {"answer": [], "GT": []}
+
+    def eval_f1(self):
+        """Evaluate F1 score for the perception task"""
+        pred_all = []
+        GT_all = []
+        for i in range(len(self.accuracy["answer"])):
+            answer = self.accuracy["answer"][i]
+            GT = self.accuracy["GT"][i]
+            answer = preprocess_answer(answer)
+            GT = preprocess_answer(GT)
+            pred_all.append(answer)
+            GT_all.append(GT)
+        if len(pred_all) == 0:
+            print("No data for F1 evaluation")
+            return -1
+    
+        f1 = f1_score(GT_all, pred_all, average='macro')
+        print(f'F1_score: {f1}')
+        
+        return f1
 
     def eval_acc(self):
         scores = []
@@ -39,72 +63,42 @@ class evaluation_suit():
             score = -1
         return score
 
-    def eval_match(self):
-        outs1 = []
-        for i in range(len(self.match["answer"])):
-            answer = self.match["answer"][i]
-            GT = self.match["GT"][i]
-            _, F1_score = self.match_result(answer, GT)
-            outs1.append(F1_score)
+    def eval_language(self):
+        """
+        return the dict evaluation results
+        """
+        answer = self.language["answer"]
+        GT = self.language["GT"]
+        if len(answer) == 0:
+            print("No data for language evaluation")
+            return -1
+        results_gen = self.language_eval.run_evaluation(answer, GT)
+        results_gen_dict = {
+            f"val/{k}": v for k, v in results_gen.items()
+        }
         
-        if len(outs1) > 0:
-            score = sum(outs1) / len(outs1)
-            print(f'F1 Score: {sum(outs1)} / {len(outs1)} = {score}')
+        print(f'Language evaluation results: {results_gen_dict}')
+        return results_gen_dict
+
+    def eval_chatGPT(self, data):
+        with Pool(32) as p:  # Change the number based on your CPU cores
+            scores = p.map(self.chatgpt_eval.forward_percept, data)
+
+        if len(scores) > 0:
+            scores = list(map(float, scores))
+            scores = sum(scores) / len(scores)
+            print(f'ChatGPT_score: {scores / 100}')
         else:
-            print("No data for match evaluation")
-            score = -1
-        return score
-
-    def match_result(self, answer, GT):
-        """
-        answer: [[1.,2.], [2., 3.]]
-        GT: [[1., 2.], [2., 3.]]
-        """
-        answer_nums = re.findall(r'\d+\.\d+', answer)
-        GT_nums = re.findall(r'\d+\.\d+', GT)
-        # transform string into float
-        if len(answer_nums) % 2 != 0:
-            answer_nums = answer_nums[:-1]
-        answer_nums = np.array([list(map(float, x.split()))[0] for x in answer_nums]).reshape(-1, 2)
-        GT_nums = np.array([list(map(float, x.split()))[0] for x in GT_nums]).reshape(-1, 2)
-        length = len(GT_nums)
-
-        matched_out = []
-        true_positives = 0
-        false_positives = 0
-        false_negatives = 0
-        for pred in answer_nums:
-            closest_distance = float('inf')
-            closest_gt = None
-            closest_id = None
-            for i, gt in enumerate(GT_nums):
-                distance = np.sum(np.abs(pred - gt))
-                if distance < closest_distance:
-                    closest_distance = distance
-                    closest_gt = gt
-                    closest_id = i
-
-            if closest_distance < self.thresh:
-                true_positives += 1
-                matched_out.append(closest_gt)  
-                GT_nums = np.delete(GT_nums, closest_id, axis=0) 
-            else:
-                false_positives += 1
-            
-        false_negatives = length - true_positives
-        precision = true_positives / (true_positives + false_positives + 1e-8)
-        recall = true_positives / (true_positives + false_negatives + 1e-8)
-        F1 = 2 * precision * recall / (precision + recall + 1e-8)
-
-        if F1 > 0:
-            a = 1
-
-        return matched_out, F1
+            print("No data for ChatGPT evaluation")
+            scores = -1
+        return scores / 100
 
     def forward(self, tag, answer, GT):
         if 2 in tag:
-            self.match["GT"].append(GT)
-            self.match["answer"].append(answer)
+            self.language["GT"].append(GT)
+            self.language["answer"].append(answer)
+            
+            self.GPT.append((answer, GT))
         elif 0 in tag:
             self.accuracy["answer"].append(answer)
             self.accuracy["GT"].append(GT)
@@ -115,7 +109,10 @@ class evaluation_suit():
         print("evaluation start!")
         scores = {}
         scores["accuracy"] = self.eval_acc()
-        scores["match"] = self.eval_match()
+        scores["F1"] = self.eval_f1()
+        scores["language"] = self.eval_language()
+        if self.eval_gpt:
+            scores["chatGPT"] = self.eval_chatGPT(self.GPT)
 
 
 if __name__ == '__main__':
@@ -123,8 +120,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Evaluation')
     parser.add_argument('root_path1', type=str, help='path to prediction file')
     parser.add_argument('gt_path', type=str, help='path to test file')
-    parser.add_argument('--thresh', type=float, default=0.05, help='threshold for match evaluation',)
+    parser.add_argument('--api_key', type=str, default='', required=False, help='OpenAI API key')
+    parser.add_argument('--eval_gpt', action='store_true', required=False, help='Evaluate GPT score')
     args = parser.parse_args()
+    
+    if args.eval_gpt:
+        if args.api_key == '':
+            raise ValueError("Please provide the OpenAI API key")
     
     print('\n############')
     print(f'Evaluating {args.root_path1} for task PERCEPTION\n')
@@ -136,7 +138,7 @@ if __name__ == '__main__':
     with open(args.gt_path, 'r') as f:
         test_file = json.load(f)
 
-    evaluation = evaluation_suit(args.thresh)
+    evaluation = evaluation_suit(args.api_key, args.eval_gpt)
     for scene_id in test_file.keys():
         scene_data = test_file[scene_id]['key_frames']
 
@@ -158,8 +160,8 @@ if __name__ == '__main__':
                 
                 idx = scene_id + "_" + frame_id + "_" + str(i)
                 
-                if idx not in pred_file:
-                    print(f"[Warning] idx {idx} not in pred_file")
+                if not idx in pred_file.keys():
+                    print(f"idx {idx} not in pred_file")
                     continue
                 
                 predict = pred_file[idx]["answer"]
