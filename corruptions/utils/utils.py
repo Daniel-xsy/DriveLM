@@ -14,5 +14,7 @@ def convert_text_to_json(input_text, required_keys=["Q", "A"]):
             raise
     except json.JSONDecodeError:
         # If the text is not valid JSON, return None
-        print('Fail to convert text to json', input_text)
+        if input_text.strip() == "":
+            return None
+        print(f'Fail to convert text to json: {input_text}')
         return None
