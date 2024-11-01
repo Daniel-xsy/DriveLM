@@ -4,6 +4,7 @@ import random
 import time
 import argparse
 import numpy as np
+from tqdm import tqdm
 
 import cv2
 from rich import print
@@ -37,13 +38,21 @@ def main(args):
     with open(json_path, 'r') as f:
         data = json.load(f)
 
-    save_dict = dict()
-    for scene_token, data_item in data.items():
+    # resume the saved data
+    if os.path.exists(args.save_path):
+        with open(args.save_path, 'r') as f:
+            save_dict = json.load(f)
+    else:
+        save_dict = dict()
+        
+    for scene_token, data_item in tqdm(data.items()):
         key_frames = data_item['key_frames']
 
         save_dict[scene_token] = dict()
         for sample_token, data_ in key_frames.items():
 
+            if scene_token in save_dict and sample_token in save_dict[scene_token]:
+                continue
             save_dict[scene_token][sample_token] = dict()
 
             perception_qas = data_['QA']['perception']
@@ -91,7 +100,7 @@ def main(args):
                         success = True
 
             with open(args.save_path, 'w') as f:
-                json.dump(save_dict, f)
+                json.dump(save_dict, f, indent=4)
 
 
 if __name__ == '__main__':
